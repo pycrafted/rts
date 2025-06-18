@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
 
 export interface UMTSSimulationState {
   // Paramètres utilisateur
@@ -33,12 +34,23 @@ export interface UMTSSimulationState {
   resetToDefaults: () => void;
 }
 
+// Cache pour les calculs
+const calculationCache = new Map<string, number>();
+
 const calculateLoadFactor = (
   numberOfUsers: number,
   dataRatePerUser: number,
   activityFactor: number,
   serviceType: 'voice' | 'data' | 'video'
 ): number => {
+  // Créer une clé de cache
+  const cacheKey = `${numberOfUsers}-${dataRatePerUser}-${activityFactor}-${serviceType}`;
+  
+  // Vérifier le cache
+  if (calculationCache.has(cacheKey)) {
+    return calculationCache.get(cacheKey)!;
+  }
+  
   // Facteurs de charge selon le type de service
   const serviceFactors = {
     voice: 0.67,
@@ -56,7 +68,20 @@ const calculateLoadFactor = (
   const loadFactor = (numberOfUsers * dataRatePerUser * activityFactor * serviceFactor) / 
                     (wcdmaChipRate / processingGain);
   
-  return Math.min(loadFactor, 1.0); // Limite à 100%
+  const result = Math.min(loadFactor, 1.0); // Limite à 100%
+  
+  // Mettre en cache le résultat
+  calculationCache.set(cacheKey, result);
+  
+  // Limiter la taille du cache
+  if (calculationCache.size > 100) {
+    const firstKey = calculationCache.keys().next().value;
+    if (firstKey) {
+      calculationCache.delete(firstKey);
+    }
+  }
+  
+  return result;
 };
 
 const calculateQoS = (loadFactor: number): 'excellent' | 'good' | 'fair' | 'poor' => {
@@ -74,9 +99,13 @@ const calculateNodeBsRequired = (loadFactor: number): number => {
   return 1 + additionalNodeBs;
 };
 
+// Optimisation : Générer des positions avec moins de calculs
 const generateRandomPositions = (count: number, loadFactor: number) => {
   const positions = [];
   const coverageRadius = 1000; // 1km de rayon
+  
+  // Pré-calculer les valeurs communes
+  const loadFactorInverse = 1 - loadFactor;
   
   for (let i = 0; i < count; i++) {
     // Position aléatoire dans un cercle
@@ -87,9 +116,9 @@ const generateRandomPositions = (count: number, loadFactor: number) => {
     const z = Math.sin(angle) * distance;
     const y = Math.random() * 50; // Hauteur variable
     
-    // QoS basée sur la distance et le facteur de charge
+    // QoS basée sur la distance et le facteur de charge - optimisé
     const distanceFactor = 1 - (distance / coverageRadius);
-    const qos = Math.max(0, Math.min(1, distanceFactor * (1 - loadFactor)));
+    const qos = Math.max(0, Math.min(1, distanceFactor * loadFactorInverse));
     
     positions.push({ x, y, z, qos });
   }
@@ -97,90 +126,99 @@ const generateRandomPositions = (count: number, loadFactor: number) => {
   return positions;
 };
 
-export const useUMTSSimulationStore = create<UMTSSimulationState>((set, get) => ({
-  // État initial
-  numberOfUsers: 50,
-  dataRatePerUser: 64,
-  activityFactor: 0.5,
-  serviceType: 'voice',
-  nodeBTransmitPower: 43,
-  showInterference: false,
-  showHandovers: false,
-  loadFactor: 0,
-  qosLevel: 'excellent',
-  numberOfNodeBsRequired: 1,
-  userPositions: [],
-  
-  // Actions
-  setNumberOfUsers: (users) => {
-    set({ numberOfUsers: users });
-    get().updateResults();
-  },
-  
-  setDataRatePerUser: (rate) => {
-    set({ dataRatePerUser: rate });
-    get().updateResults();
-  },
-  
-  setActivityFactor: (factor) => {
-    set({ activityFactor: factor });
-    get().updateResults();
-  },
-  
-  setServiceType: (type) => {
-    set({ serviceType: type });
-    get().updateResults();
-  },
-  
-  setNodeBTransmitPower: (power) => {
-    set({ nodeBTransmitPower: power });
-    get().updateResults();
-  },
-  
-  setShowInterference: (show) => {
-    set({ showInterference: show });
-  },
-  
-  setShowHandovers: (show) => {
-    set({ showHandovers: show });
-  },
-  
-  updateResults: () => {
-    const { numberOfUsers, dataRatePerUser, activityFactor, serviceType } = get();
+export const useUMTSSimulationStore = create<UMTSSimulationState>()(
+  subscribeWithSelector((set, get) => ({
+    // État initial
+    numberOfUsers: 50,
+    dataRatePerUser: 64,
+    activityFactor: 0.5,
+    serviceType: 'voice',
+    nodeBTransmitPower: 43,
+    showInterference: false,
+    showHandovers: false,
+    loadFactor: 0,
+    qosLevel: 'excellent',
+    numberOfNodeBsRequired: 1,
+    userPositions: [],
     
-    const loadFactor = calculateLoadFactor(numberOfUsers, dataRatePerUser, activityFactor, serviceType);
-    const qosLevel = calculateQoS(loadFactor);
-    const numberOfNodeBsRequired = calculateNodeBsRequired(loadFactor);
+    // Actions optimisées avec debouncing
+    setNumberOfUsers: (users) => {
+      set({ numberOfUsers: users });
+      // Délai pour éviter les recalculs constants
+      setTimeout(() => get().updateResults(), 100);
+    },
     
-    set({ 
-      loadFactor, 
-      qosLevel, 
-      numberOfNodeBsRequired 
-    });
+    setDataRatePerUser: (rate) => {
+      set({ dataRatePerUser: rate });
+      setTimeout(() => get().updateResults(), 100);
+    },
     
-    get().generateUserPositions();
-  },
-  
-  generateUserPositions: () => {
-    const { numberOfUsers, loadFactor } = get();
-    const positions = generateRandomPositions(numberOfUsers, loadFactor);
-    set({ userPositions: positions });
-  },
-  
-  resetToDefaults: () => {
-    set({
-      numberOfUsers: 50,
-      dataRatePerUser: 64,
-      activityFactor: 0.5,
-      serviceType: 'voice',
-      nodeBTransmitPower: 43,
-      showInterference: false,
-      showHandovers: false,
-      loadFactor: 0,
-      qosLevel: 'excellent',
-      numberOfNodeBsRequired: 1,
-      userPositions: []
-    });
-    get().updateResults();
-  }
-})); 
+    setActivityFactor: (factor) => {
+      set({ activityFactor: factor });
+      setTimeout(() => get().updateResults(), 100);
+    },
+    
+    setServiceType: (type) => {
+      set({ serviceType: type });
+      setTimeout(() => get().updateResults(), 100);
+    },
+    
+    setNodeBTransmitPower: (power) => {
+      set({ nodeBTransmitPower: power });
+      // Pas besoin de recalculer pour la puissance d'émission
+    },
+    
+    setShowInterference: (show) => {
+      set({ showInterference: show });
+    },
+    
+    setShowHandovers: (show) => {
+      set({ showHandovers: show });
+    },
+    
+    updateResults: () => {
+      const { numberOfUsers, dataRatePerUser, activityFactor, serviceType } = get();
+      
+      const loadFactor = calculateLoadFactor(numberOfUsers, dataRatePerUser, activityFactor, serviceType);
+      const qosLevel = calculateQoS(loadFactor);
+      const numberOfNodeBsRequired = calculateNodeBsRequired(loadFactor);
+      
+      set({ 
+        loadFactor, 
+        qosLevel, 
+        numberOfNodeBsRequired 
+      });
+      
+      // Générer les positions seulement si nécessaire
+      const currentPositions = get().userPositions;
+      if (currentPositions.length !== numberOfUsers) {
+        get().generateUserPositions();
+      }
+    },
+    
+    generateUserPositions: () => {
+      const { numberOfUsers, loadFactor } = get();
+      const positions = generateRandomPositions(numberOfUsers, loadFactor);
+      set({ userPositions: positions });
+    },
+    
+    resetToDefaults: () => {
+      set({
+        numberOfUsers: 50,
+        dataRatePerUser: 64,
+        activityFactor: 0.5,
+        serviceType: 'voice',
+        nodeBTransmitPower: 43,
+        showInterference: false,
+        showHandovers: false,
+        loadFactor: 0,
+        qosLevel: 'excellent',
+        numberOfNodeBsRequired: 1,
+        userPositions: []
+      });
+      // Vider le cache lors du reset
+      calculationCache.clear();
+      get().updateResults();
+    }
+  }))
+); 

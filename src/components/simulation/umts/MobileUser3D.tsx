@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -12,90 +12,104 @@ export const MobileUser3D: React.FC<MobileUser3DProps> = ({ position, qos, index
   const meshRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
   
-  // Animation de pulsation basée sur la QoS
+  // Optimisation : Réduire la fréquence des animations
+  const animationSpeed = useMemo(() => 1 + (index % 3), [index]);
+  
+  // Animation de pulsation basée sur la QoS - optimisée
   useFrame((state) => {
     if (meshRef.current) {
-      const scale = 1 + Math.sin(state.clock.elapsedTime * 3 + index) * 0.1 * qos;
+      // Réduire la fréquence des animations pour les performances
+      const scale = 1 + Math.sin(state.clock.elapsedTime * animationSpeed) * 0.05 * qos;
       meshRef.current.scale.setScalar(scale);
     }
     
-    if (lightRef.current) {
-      const intensity = 0.5 + Math.sin(state.clock.elapsedTime * 2 + index) * 0.3 * qos;
+    // Éclairage moins fréquent
+    if (lightRef.current && index < 10) { // Limiter aux 10 premiers utilisateurs
+      const intensity = 0.3 + Math.sin(state.clock.elapsedTime * 1.5 + index) * 0.2 * qos;
       lightRef.current.intensity = intensity;
     }
   });
 
-  // Couleur basée sur la QoS
-  const getQoSColor = (qos: number) => {
+  // Couleur basée sur la QoS - mémorisée
+  const qosColor = useMemo(() => {
     if (qos > 0.8) return '#10b981'; // Vert - excellent
     if (qos > 0.6) return '#f59e0b'; // Orange - bon
     if (qos > 0.4) return '#f97316'; // Orange foncé - moyen
     return '#ef4444'; // Rouge - mauvais
-  };
+  }, [qos]);
 
-  // Taille basée sur la QoS
-  const getSize = (qos: number) => {
-    return 2 + qos * 3; // 2-5 unités
-  };
+  // Taille basée sur la QoS - mémorisée
+  const size = useMemo(() => 2 + qos * 2, [qos]); // Réduire la taille maximale
+
+  // Mémoriser les géométries pour éviter les recréations
+  const geometries = useMemo(() => ({
+    sphere: new THREE.SphereGeometry(size, 6, 6), // Réduire la résolution
+    ring: new THREE.RingGeometry(size + 0.5, size + 1, 6), // Réduire la résolution
+    cylinder: new THREE.CylinderGeometry(0.1, 0.1, Math.sqrt(position[0]**2 + position[2]**2), 4)
+  }), [size, position]);
 
   return (
     <group position={position}>
-      {/* Utilisateur mobile (sphère) */}
+      {/* Utilisateur mobile (sphère) - géométrie mémorisée */}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[getSize(qos), 8, 8]} />
+        <primitive object={geometries.sphere} />
         <meshStandardMaterial 
-          color={getQoSColor(qos)} 
+          color={qosColor} 
           metalness={0.3} 
           roughness={0.7}
-          emissive={getQoSColor(qos)}
-          emissiveIntensity={0.2 * qos}
+          emissive={qosColor}
+          emissiveIntensity={0.1 * qos} // Réduire l'intensité
         />
       </mesh>
       
-      {/* Éclairage de l'utilisateur */}
-      <pointLight 
-        ref={lightRef}
-        position={[0, 0, 0]} 
-        intensity={0.5} 
-        color={getQoSColor(qos)}
-        distance={20}
-      />
+      {/* Éclairage de l'utilisateur - seulement pour les premiers utilisateurs */}
+      {index < 10 && (
+        <pointLight 
+          ref={lightRef}
+          position={[0, 0, 0]} 
+          intensity={0.3} 
+          color={qosColor}
+          distance={15} // Réduire la distance
+        />
+      )}
       
-      {/* Indicateur de signal (lignes de connexion) */}
-      {qos > 0.3 && (
+      {/* Indicateur de signal (lignes de connexion) - simplifié */}
+      {qos > 0.3 && index < 15 && ( // Limiter aux 15 premiers utilisateurs
         <group>
-          {/* Ligne vers le Node B */}
+          {/* Ligne vers le Node B - géométrie mémorisée */}
           <mesh position={[0, 0, 0]}>
-            <cylinderGeometry args={[0.1, 0.1, Math.sqrt(position[0]**2 + position[2]**2), 4]} />
+            <primitive object={geometries.cylinder} />
             <meshStandardMaterial 
-              color={getQoSColor(qos)} 
+              color={qosColor} 
               transparent 
-              opacity={0.6 * qos}
+              opacity={0.4 * qos} // Réduire l'opacité
             />
           </mesh>
           
-          {/* Ondes de signal */}
+          {/* Ondes de signal - géométrie mémorisée */}
           <mesh position={[0, 0, 0]}>
-            <ringGeometry args={[getSize(qos) + 1, getSize(qos) + 2, 8]} />
+            <primitive object={geometries.ring} />
             <meshStandardMaterial 
-              color={getQoSColor(qos)} 
+              color={qosColor} 
               transparent 
-              opacity={0.3 * qos}
+              opacity={0.2 * qos} // Réduire l'opacité
               side={THREE.DoubleSide}
             />
           </mesh>
         </group>
       )}
       
-      {/* Indicateur de charge (petit cube) */}
-      <mesh position={[0, getSize(qos) + 1, 0]}>
-        <boxGeometry args={[0.5, 0.5, 0.5]} />
-        <meshStandardMaterial 
-          color={qos > 0.7 ? '#10b981' : qos > 0.4 ? '#f59e0b' : '#ef4444'} 
-          emissive={qos > 0.7 ? '#10b981' : qos > 0.4 ? '#f59e0b' : '#ef4444'}
-          emissiveIntensity={0.5}
-        />
-      </mesh>
+      {/* Indicateur de charge (petit cube) - seulement pour les premiers utilisateurs */}
+      {index < 20 && (
+        <mesh position={[0, size + 0.5, 0]}>
+          <boxGeometry args={[0.3, 0.3, 0.3]} />
+          <meshStandardMaterial 
+            color={qos > 0.7 ? '#10b981' : qos > 0.4 ? '#f59e0b' : '#ef4444'} 
+            emissive={qos > 0.7 ? '#10b981' : qos > 0.4 ? '#f59e0b' : '#ef4444'}
+            emissiveIntensity={0.3} // Réduire l'intensité
+          />
+        </mesh>
+      )}
     </group>
   );
 }; 

@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
 import { NodeB3D } from './NodeB3D';
 import { MobileUser3D } from './MobileUser3D';
 import { LoadFactorPanel } from './LoadFactorPanel';
+import { PerformanceMonitor } from './PerformanceMonitor';
+import { AutoOptimizer } from './AutoOptimizer';
 import { useUMTSSimulationStore } from './useUMTSSimulationStore';
 
 export const SimulationUMTS: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [currentFps, setCurrentFps] = useState(60);
+  
   const {
     loadFactor,
     userPositions,
@@ -16,24 +20,107 @@ export const SimulationUMTS: React.FC = () => {
     updateResults
   } = useUMTSSimulationStore();
 
-  // Initialiser les résultats au montage
-  useEffect(() => {
-    const initializeSimulation = async () => {
-      try {
-        // Simuler un temps de chargement pour les ressources 3D
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        updateResults();
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Erreur lors du chargement de la simulation:', error);
-        setIsLoading(false);
-      }
-    };
-
-    initializeSimulation();
+  // Initialiser les résultats au montage - optimisé avec useCallback
+  const initializeSimulation = useCallback(async () => {
+    try {
+      // Réduire le temps de chargement
+      await new Promise(resolve => setTimeout(resolve, 800));
+      updateResults();
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Erreur lors du chargement de la simulation:', error);
+      setIsLoading(false);
+    }
   }, [updateResults]);
 
-  // Composant de loader
+  useEffect(() => {
+    initializeSimulation();
+  }, [initializeSimulation]);
+
+  // Optimisation : Mémoriser les composants d'interférence
+  const interferenceElements = useMemo(() => {
+    if (!showInterference) return null;
+    
+    return (
+      <group>
+        {/* Zone d'interférence autour du Node B - géométrie simplifiée */}
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[800, 12, 12]} />
+          <meshStandardMaterial 
+            color="#ef4444" 
+            transparent 
+            opacity={0.1}
+            wireframe
+          />
+        </mesh>
+        
+        {/* Indicateurs d'interférence - limités aux 3 premiers utilisateurs */}
+        {userPositions.slice(0, 3).map((user, index) => (
+          <mesh key={`interference-${index}`} position={[user.x, user.y, user.z]}>
+            <sphereGeometry args={[20, 6, 6]} />
+            <meshStandardMaterial 
+              color="#ef4444" 
+              transparent 
+              opacity={0.3}
+            />
+          </mesh>
+        ))}
+      </group>
+    );
+  }, [showInterference, userPositions]);
+
+  // Optimisation : Mémoriser les éléments de handover
+  const handoverElements = useMemo(() => {
+    if (!showHandovers) return null;
+    
+    const handovers = [];
+    // Limiter les calculs de handover aux 5 premiers utilisateurs
+    const limitedUsers = userPositions.slice(0, 5);
+    
+    for (let i = 0; i < limitedUsers.length; i++) {
+      for (let j = i + 1; j < Math.min(i + 2, limitedUsers.length); j++) {
+        const user1 = limitedUsers[i];
+        const user2 = limitedUsers[j];
+        
+        const distance = Math.sqrt(
+          Math.pow(user1.x - user2.x, 2) + 
+          Math.pow(user1.z - user2.z, 2)
+        );
+        
+        if (distance < 200) {
+          handovers.push(
+            <mesh key={`handover-${i}-${j}`}>
+              <cylinderGeometry args={[0.5, 0.5, distance, 4]} />
+              <meshStandardMaterial 
+                color="#3b82f6" 
+                transparent 
+                opacity={0.6}
+              />
+            </mesh>
+          );
+        }
+      }
+    }
+    
+    return <group>{handovers}</group>;
+  }, [showHandovers, userPositions]);
+
+  // Optimisation : Mémoriser les utilisateurs mobiles
+  const mobileUsers = useMemo(() => {
+    // Limiter le nombre d'utilisateurs affichés pour les performances
+    const maxDisplayedUsers = Math.min(userPositions.length, 20);
+    
+    return userPositions.slice(0, maxDisplayedUsers).map((user, index) => (
+      <MobileUser3D
+        key={`user-${index}`}
+        position={[user.x, user.y, user.z]}
+        qos={user.qos}
+        index={index}
+      />
+    ));
+  }, [userPositions]);
+
+  // Composant de loader optimisé
   const LoadingScreen = () => (
     <div className="flex h-screen bg-gradient-to-b from-blue-50 to-indigo-100 items-center justify-center">
       <div className="text-center">
@@ -89,28 +176,34 @@ export const SimulationUMTS: React.FC = () => {
           camera={{ position: [0, 100, 200], fov: 60 }}
           shadows
           className="bg-gradient-to-b from-blue-50 to-indigo-100"
+          // Optimisations de performance
+          gl={{ 
+            antialias: false, // Désactiver l'antialiasing pour les performances
+            powerPreference: "high-performance"
+          }}
+          dpr={[1, 2]} // Limiter la densité de pixels
         >
-          {/* Éclairage */}
+          {/* Éclairage optimisé */}
           <ambientLight intensity={0.4} />
           <directionalLight
             position={[10, 10, 5]}
             intensity={1}
             castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
+            shadow-mapSize-width={1024} // Réduire la résolution des ombres
+            shadow-mapSize-height={1024}
           />
           
           {/* Environnement */}
           <Environment preset="sunset" />
           
-          {/* Sol de référence */}
+          {/* Sol de référence - géométrie simplifiée */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -50, 0]} receiveShadow>
             <planeGeometry args={[2000, 2000]} />
             <meshStandardMaterial color="#e5e7eb" />
           </mesh>
           
-          {/* Grille de référence */}
-          <gridHelper args={[2000, 50, '#9ca3af', '#d1d5db']} />
+          {/* Grille de référence - moins de divisions */}
+          <gridHelper args={[2000, 25, '#9ca3af', '#d1d5db']} />
           
           {/* Node B principal */}
           <NodeB3D 
@@ -118,72 +211,14 @@ export const SimulationUMTS: React.FC = () => {
             loadFactor={loadFactor} 
           />
           
-          {/* Utilisateurs mobiles */}
-          {userPositions.map((user, index) => (
-            <MobileUser3D
-              key={index}
-              position={[user.x, user.y, user.z]}
-              qos={user.qos}
-              index={index}
-            />
-          ))}
+          {/* Utilisateurs mobiles optimisés */}
+          {mobileUsers}
           
-          {/* Zones d'interférence (optionnel) */}
-          {showInterference && (
-            <group>
-              {/* Zone d'interférence autour du Node B */}
-              <mesh position={[0, 0, 0]}>
-                <sphereGeometry args={[800, 16, 16]} />
-                <meshStandardMaterial 
-                  color="#ef4444" 
-                  transparent 
-                  opacity={0.1}
-                  wireframe
-                />
-              </mesh>
-              
-              {/* Indicateurs d'interférence */}
-              {userPositions.slice(0, 5).map((user, index) => (
-                <mesh key={`interference-${index}`} position={[user.x, user.y, user.z]}>
-                  <sphereGeometry args={[20, 8, 8]} />
-                  <meshStandardMaterial 
-                    color="#ef4444" 
-                    transparent 
-                    opacity={0.3}
-                  />
-                </mesh>
-              ))}
-            </group>
-          )}
+          {/* Zones d'interférence optimisées */}
+          {interferenceElements}
           
-          {/* Handovers (optionnel) */}
-          {showHandovers && (
-            <group>
-              {/* Lignes de handover entre utilisateurs proches */}
-              {userPositions.slice(0, 10).map((user1, index1) => 
-                userPositions.slice(index1 + 1, index1 + 3).map((user2, index2) => {
-                  const distance = Math.sqrt(
-                    Math.pow(user1.x - user2.x, 2) + 
-                    Math.pow(user1.z - user2.z, 2)
-                  );
-                  
-                  if (distance < 200) {
-                    return (
-                      <mesh key={`handover-${index1}-${index2}`}>
-                        <cylinderGeometry args={[0.5, 0.5, distance, 4]} />
-                        <meshStandardMaterial 
-                          color="#3b82f6" 
-                          transparent 
-                          opacity={0.6}
-                        />
-                      </mesh>
-                    );
-                  }
-                  return null;
-                })
-              )}
-            </group>
-          )}
+          {/* Handovers optimisés */}
+          {handoverElements}
           
           {/* Contrôles de caméra */}
           <OrbitControls 
@@ -192,6 +227,8 @@ export const SimulationUMTS: React.FC = () => {
             enableRotate={true}
             maxDistance={1000}
             minDistance={50}
+            // Optimisations des contrôles
+            enableDamping={false} // Désactiver le damping pour les performances
           />
           
           {/* Statistiques de performance */}
@@ -205,6 +242,7 @@ export const SimulationUMTS: React.FC = () => {
             <p>• Utilisez la souris pour naviguer dans la scène 3D</p>
             <p>• Ajustez les paramètres dans le panneau de droite</p>
             <p>• Observez l'impact sur le facteur de charge</p>
+            <p>• Performance optimisée - {userPositions.length} utilisateurs</p>
           </div>
         </div>
         
@@ -217,6 +255,19 @@ export const SimulationUMTS: React.FC = () => {
             <div className="text-xs text-gray-600">Facteur de charge</div>
           </div>
         </div>
+        
+        {/* Moniteur de performance */}
+        <PerformanceMonitor 
+          userCount={userPositions.length}
+          loadFactor={loadFactor}
+          onFpsChange={setCurrentFps}
+        />
+        
+        {/* Auto-optimiseur */}
+        <AutoOptimizer 
+          currentFps={currentFps}
+          targetFps={30}
+        />
       </div>
       
       {/* Panneau de contrôle */}
