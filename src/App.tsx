@@ -20,6 +20,7 @@ import OptiqueForm from './components/optique/OptiqueForm';
 import OptiqueSimulation from './pages/OptiqueSimulation';
 import HertzienSimulation from './pages/HertzienSimulation';
 import GSMCoverageDemo from './components/gsm/GSMCoverageDemo';
+import { UMTSSimulation } from './pages/UMTSSimulation';
 
 const App: React.FC = () => {
   return (
@@ -122,6 +123,7 @@ const App: React.FC = () => {
               <Route path="/simulation/optique" element={<OptiqueSimulation />} />
               <Route path="/simulation/hertzien" element={<HertzienSimulation />} />
               <Route path="/simulation/gsm" element={<GSMCoverageDemo />} />
+              <Route path="/simulation/umts" element={<UMTSSimulation />} />
               <Route path="/documentation" element={<Documentation />} />
             </Routes>
           </div>
