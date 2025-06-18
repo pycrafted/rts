@@ -15,6 +15,7 @@ interface GsmCoverageSceneProps {
   obstaclePosition?: [number, number, number];
   obstacleSize?: [number, number, number];
   antennaHeight?: number;
+  phonePosition?: [number, number, number];
 }
 
 // Composant pour l'antenne GSM
@@ -38,6 +39,67 @@ const Antenna: React.FC<{ height: number }> = ({ height }) => {
       <Cylinder args={[0.4, 0.4, 0.2, 8]} position={[0, -height / 2 - 0.1, 0]}>
         <meshStandardMaterial color="#7f8c8d" metalness={0.4} roughness={0.6} />
       </Cylinder>
+    </group>
+  );
+};
+
+// Composant pour le téléphone mobile
+const Phone: React.FC<{ 
+  position: [number, number, number]; 
+  signalQuality: 'excellent' | 'good' | 'poor' | 'none';
+  isDragging: boolean;
+}> = ({ position, signalQuality, isDragging }) => {
+  const phoneRef = useRef<THREE.Group>(null);
+  
+  // Couleurs selon la qualité du signal
+  const getPhoneColor = () => {
+    switch (signalQuality) {
+      case 'excellent': return '#10b981'; // Vert
+      case 'good': return '#f59e0b';      // Orange
+      case 'poor': return '#ef4444';      // Rouge
+      case 'none': return '#6b7280';      // Gris
+      default: return '#6b7280';
+    }
+  };
+
+  // Animation de pulsation pour le téléphone
+  useFrame((state) => {
+    if (phoneRef.current && signalQuality !== 'none') {
+      const scale = 1 + Math.sin(state.clock.elapsedTime * 3) * 0.05;
+      phoneRef.current.scale.setScalar(scale);
+    }
+  });
+
+  return (
+    <group ref={phoneRef} position={position}>
+      {/* Corps du téléphone */}
+      <Box args={[0.3, 0.6, 0.05]} position={[0, 0, 0]}>
+        <meshStandardMaterial 
+          color={getPhoneColor()} 
+          metalness={0.3} 
+          roughness={0.7}
+          emissive={signalQuality !== 'none' ? getPhoneColor() : '#000000'}
+          emissiveIntensity={signalQuality === 'excellent' ? 0.3 : signalQuality === 'good' ? 0.2 : 0.1}
+        />
+      </Box>
+      
+      {/* Écran du téléphone */}
+      <Box args={[0.25, 0.5, 0.01]} position={[0, 0, 0.03]}>
+        <meshStandardMaterial color="#000000" />
+      </Box>
+      
+      {/* Indicateur de signal */}
+      <Box args={[0.2, 0.02, 0.01]} position={[0, 0.2, 0.04]}>
+        <meshStandardMaterial color={getPhoneColor()} />
+      </Box>
+      
+      {/* Anneau de sélection quand on peut le déplacer */}
+      {isDragging && (
+        <mesh position={[0, 0, 0.1]}>
+          <ringGeometry args={[0.4, 0.5, 32]} />
+          <meshBasicMaterial color="#3b82f6" transparent opacity={0.5} />
+        </mesh>
+      )}
     </group>
   );
 };
@@ -121,13 +183,73 @@ const Obstacle: React.FC<{ position: [number, number, number]; size: [number, nu
   );
 };
 
+// Fonction pour calculer la qualité du signal
+const calculateSignalQuality = (
+  phonePosition: [number, number, number],
+  antennaPosition: [number, number, number],
+  coverageRadius: number,
+  obstaclePosition: [number, number, number],
+  obstacleSize: [number, number, number]
+): 'excellent' | 'good' | 'poor' | 'none' => {
+  // Distance entre le téléphone et l'antenne
+  const distanceToAntenna = Math.sqrt(
+    Math.pow(phonePosition[0] - antennaPosition[0], 2) +
+    Math.pow(phonePosition[1] - antennaPosition[1], 2) +
+    Math.pow(phonePosition[2] - antennaPosition[2], 2)
+  );
+
+  // Vérifier si le téléphone est dans la zone de couverture
+  if (distanceToAntenna > coverageRadius) {
+    return 'none';
+  }
+
+  // Vérifier si le téléphone est derrière l'obstacle
+  const isBehindObstacle = 
+    phonePosition[2] > obstaclePosition[2] && 
+    Math.abs(phonePosition[0] - obstaclePosition[0]) < obstacleSize[0] / 2 &&
+    Math.abs(phonePosition[1] - obstaclePosition[1]) < obstacleSize[1] / 2;
+
+  if (isBehindObstacle) {
+    // Atténuation derrière l'obstacle
+    const distanceToObstacle = Math.sqrt(
+      Math.pow(phonePosition[0] - obstaclePosition[0], 2) +
+      Math.pow(phonePosition[1] - obstaclePosition[1], 2) +
+      Math.pow(phonePosition[2] - obstaclePosition[2], 2)
+    );
+    const attenuation = Math.max(0.1, 1 - (distanceToObstacle / coverageRadius));
+    
+    if (attenuation < 0.3) return 'none';
+    if (attenuation < 0.6) return 'poor';
+    return 'good';
+  }
+
+  // Qualité basée sur la distance à l'antenne
+  const signalStrength = 1 - (distanceToAntenna / coverageRadius);
+  
+  if (signalStrength > 0.8) return 'excellent';
+  if (signalStrength > 0.5) return 'good';
+  if (signalStrength > 0.2) return 'poor';
+  return 'none';
+};
+
 // Composant principal de la scène
 const Scene: React.FC<GsmCoverageSceneProps> = ({ 
   coverageRadius = 5, 
   obstaclePosition = [2, 0, 3], 
   obstacleSize = [1, 2, 1], 
-  antennaHeight = 3 
+  antennaHeight = 3,
+  phonePosition = [1, 0, 1]
 }) => {
+  const antennaPosition: [number, number, number] = [0, antennaHeight, 0];
+  
+  const signalQuality = calculateSignalQuality(
+    phonePosition,
+    antennaPosition,
+    coverageRadius,
+    obstaclePosition,
+    obstacleSize
+  );
+
   return (
     <>
       {/* Éclairage d'ambiance */}
@@ -157,6 +279,13 @@ const Scene: React.FC<GsmCoverageSceneProps> = ({
       
       {/* Obstacle */}
       <Obstacle position={obstaclePosition} size={obstacleSize} />
+      
+      {/* Téléphone mobile */}
+      <Phone 
+        position={phonePosition}
+        signalQuality={signalQuality}
+        isDragging={false}
+      />
       
       {/* Sol de référence */}
       <Box args={[20, 0.1, 20]} position={[0, -0.05, 0]}>

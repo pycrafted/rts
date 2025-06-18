@@ -6,6 +6,7 @@ interface CoverageSettings {
   obstaclePosition: [number, number, number];
   obstacleSize: [number, number, number];
   antennaHeight: number;
+  phonePosition: [number, number, number];
 }
 
 interface SimulationResults {
@@ -15,6 +16,9 @@ interface SimulationResults {
   signalStrength: number;
   attenuationBehindObstacle: number;
   effectiveCoverageRadius: number;
+  phoneSignalQuality: 'excellent' | 'good' | 'poor' | 'none';
+  phoneDistanceToAntenna: number;
+  phoneDistanceToObstacle: number;
 }
 
 const GSMCoverageDemo: React.FC = () => {
@@ -22,14 +26,15 @@ const GSMCoverageDemo: React.FC = () => {
     coverageRadius: 5,
     obstaclePosition: [2, 0, 3],
     obstacleSize: [1, 2, 1],
-    antennaHeight: 3
+    antennaHeight: 3,
+    phonePosition: [1, 0, 1]
   });
 
   const [showInfo, setShowInfo] = useState(false);
 
   // Calcul des résultats de simulation
   const simulationResults = useMemo((): SimulationResults => {
-    const { coverageRadius, obstaclePosition, obstacleSize, antennaHeight } = settings;
+    const { coverageRadius, obstaclePosition, obstacleSize, antennaHeight, phonePosition } = settings;
     
     // Calcul de la zone de couverture (surface)
     const coverageArea = Math.PI * coverageRadius * coverageRadius;
@@ -56,6 +61,43 @@ const GSMCoverageDemo: React.FC = () => {
     
     // Rayon de couverture effectif (considérant l'obstacle)
     const effectiveCoverageRadius = coverageRadius * (1 - obstacleImpact / 200);
+
+    // Calculs pour le téléphone
+    const antennaPosition: [number, number, number] = [0, antennaHeight, 0];
+    const phoneDistanceToAntenna = Math.sqrt(
+      Math.pow(phonePosition[0] - antennaPosition[0], 2) +
+      Math.pow(phonePosition[1] - antennaPosition[1], 2) +
+      Math.pow(phonePosition[2] - antennaPosition[2], 2)
+    );
+
+    const phoneDistanceToObstacle = Math.sqrt(
+      Math.pow(phonePosition[0] - obstaclePosition[0], 2) +
+      Math.pow(phonePosition[1] - obstaclePosition[1], 2) +
+      Math.pow(phonePosition[2] - obstaclePosition[2], 2)
+    );
+
+    // Qualité du signal du téléphone
+    let phoneSignalQuality: 'excellent' | 'good' | 'poor' | 'none' = 'none';
+    
+    if (phoneDistanceToAntenna <= coverageRadius) {
+      const isBehindObstacle = 
+        phonePosition[2] > obstaclePosition[2] && 
+        Math.abs(phonePosition[0] - obstaclePosition[0]) < obstacleSize[0] / 2 &&
+        Math.abs(phonePosition[1] - obstaclePosition[1]) < obstacleSize[1] / 2;
+
+      if (isBehindObstacle) {
+        const attenuation = Math.max(0.1, 1 - (phoneDistanceToObstacle / coverageRadius));
+        if (attenuation < 0.3) phoneSignalQuality = 'none';
+        else if (attenuation < 0.6) phoneSignalQuality = 'poor';
+        else phoneSignalQuality = 'good';
+      } else {
+        const signalStrength = 1 - (phoneDistanceToAntenna / coverageRadius);
+        if (signalStrength > 0.8) phoneSignalQuality = 'excellent';
+        else if (signalStrength > 0.5) phoneSignalQuality = 'good';
+        else if (signalStrength > 0.2) phoneSignalQuality = 'poor';
+        else phoneSignalQuality = 'none';
+      }
+    }
     
     return {
       coverageArea,
@@ -63,7 +105,10 @@ const GSMCoverageDemo: React.FC = () => {
       obstacleImpact,
       signalStrength,
       attenuationBehindObstacle,
-      effectiveCoverageRadius
+      effectiveCoverageRadius,
+      phoneSignalQuality,
+      phoneDistanceToAntenna,
+      phoneDistanceToObstacle
     };
   }, [settings]);
 
@@ -95,6 +140,37 @@ const GSMCoverageDemo: React.FC = () => {
 
   const handleAntennaHeightChange = (height: number) => {
     setSettings(prev => ({ ...prev, antennaHeight: height }));
+  };
+
+  const handlePhonePositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
+    setSettings(prev => ({
+      ...prev,
+      phonePosition: [
+        axis === 'x' ? value : prev.phonePosition[0],
+        axis === 'y' ? value : prev.phonePosition[1],
+        axis === 'z' ? value : prev.phonePosition[2]
+      ]
+    }));
+  };
+
+  const getSignalQualityColor = (quality: string) => {
+    switch (quality) {
+      case 'excellent': return 'text-green-600 bg-green-100';
+      case 'good': return 'text-orange-600 bg-orange-100';
+      case 'poor': return 'text-red-600 bg-red-100';
+      case 'none': return 'text-gray-600 bg-gray-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getSignalQualityIcon = (quality: string) => {
+    switch (quality) {
+      case 'excellent': return '📶';
+      case 'good': return '📶';
+      case 'poor': return '📶';
+      case 'none': return '📴';
+      default: return '📴';
+    }
   };
 
   return (
@@ -130,10 +206,10 @@ const GSMCoverageDemo: React.FC = () => {
                 </p>
               </div>
               <div>
-                <h3 className="font-semibold text-blue-900 mb-2">📡 Zone de Couverture</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">📱 Téléphone Mobile</h3>
                 <p className="text-sm text-blue-800">
-                  La sphère bleue transparente représente la zone de couverture. 
-                  L'atténuation derrière les obstacles est simulée visuellement.
+                  Le téléphone change de couleur selon la qualité du signal reçu :
+                  Vert (excellent), Orange (bon), Rouge (faible), Gris (aucun signal).
                 </p>
               </div>
               <div>
@@ -190,6 +266,52 @@ const GSMCoverageDemo: React.FC = () => {
                 />
                 <div className="text-xs text-gray-500 mt-1">
                   Une antenne plus haute améliore la portée du signal
+                </div>
+              </div>
+
+              {/* Phone Position */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Position du téléphone</h3>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs text-gray-600">X: {settings.phonePosition[0]}m</label>
+                    <input
+                      type="range"
+                      min="-8"
+                      max="8"
+                      step="0.5"
+                      value={settings.phonePosition[0]}
+                      onChange={(e) => handlePhonePositionChange('x', parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600">Y: {settings.phonePosition[1]}m</label>
+                    <input
+                      type="range"
+                      min="-2"
+                      max="2"
+                      step="0.5"
+                      value={settings.phonePosition[1]}
+                      onChange={(e) => handlePhonePositionChange('y', parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600">Z: {settings.phonePosition[2]}m</label>
+                    <input
+                      type="range"
+                      min="-5"
+                      max="8"
+                      step="0.5"
+                      value={settings.phonePosition[2]}
+                      onChange={(e) => handlePhonePositionChange('z', parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Déplacez le téléphone pour tester la qualité du signal
                 </div>
               </div>
 
@@ -301,6 +423,7 @@ const GSMCoverageDemo: React.FC = () => {
                   obstaclePosition={settings.obstaclePosition}
                   obstacleSize={settings.obstacleSize}
                   antennaHeight={settings.antennaHeight}
+                  phonePosition={settings.phonePosition}
                 />
               </div>
             </div>
@@ -308,7 +431,28 @@ const GSMCoverageDemo: React.FC = () => {
             {/* Results Section */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Résultats de Simulation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Phone Signal Quality */}
+                <div className={`p-4 rounded-lg ${getSignalQualityColor(simulationResults.phoneSignalQuality)}`}>
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    {getSignalQualityIcon(simulationResults.phoneSignalQuality)} Signal Téléphone
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Qualité:</span>
+                      <span className="font-medium capitalize">{simulationResults.phoneSignalQuality}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Distance antenne:</span>
+                      <span className="font-medium">{simulationResults.phoneDistanceToAntenna.toFixed(1)}m</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Distance obstacle:</span>
+                      <span className="font-medium">{simulationResults.phoneDistanceToObstacle.toFixed(1)}m</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Coverage Metrics */}
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h3 className="font-medium text-blue-900 mb-2">📊 Métriques de Couverture</h3>
@@ -381,27 +525,27 @@ const GSMCoverageDemo: React.FC = () => {
                     <ul className="space-y-1 text-gray-600">
                       <li>• Rayon de couverture: {settings.coverageRadius}m</li>
                       <li>• Hauteur d'antenne: {settings.antennaHeight}m</li>
+                      <li>• Position téléphone: [{settings.phonePosition[0]}, {settings.phonePosition[1]}, {settings.phonePosition[2]}]</li>
                       <li>• Distance à l'obstacle: {Math.sqrt(
                         Math.pow(settings.obstaclePosition[0], 2) + 
                         Math.pow(settings.obstaclePosition[1], 2) + 
                         Math.pow(settings.obstaclePosition[2], 2)
                       ).toFixed(1)}m</li>
-                      <li>• Volume de l'obstacle: {(settings.obstacleSize[0] * settings.obstacleSize[1] * settings.obstacleSize[2]).toFixed(1)}m³</li>
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-800 mb-2">Recommandations</h4>
                     <ul className="space-y-1 text-gray-600">
-                      {simulationResults.signalStrength < 50 && (
-                        <li>• ⚠️ Augmenter la hauteur d'antenne pour améliorer la couverture</li>
+                      {simulationResults.phoneSignalQuality === 'none' && (
+                        <li>• ⚠️ Déplacer le téléphone dans la zone de couverture</li>
                       )}
-                      {simulationResults.obstacleImpact > 30 && (
-                        <li>• ⚠️ L'obstacle impacte significativement la couverture</li>
+                      {simulationResults.phoneSignalQuality === 'poor' && (
+                        <li>• ⚠️ Le téléphone reçoit un signal faible</li>
                       )}
-                      {simulationResults.effectiveCoverageRadius < settings.coverageRadius * 0.8 && (
-                        <li>• 💡 Considérer repositionner l'antenne pour éviter l'obstacle</li>
+                      {simulationResults.phoneDistanceToAntenna > settings.coverageRadius * 0.8 && (
+                        <li>• 💡 Rapprocher le téléphone de l'antenne</li>
                       )}
-                      <li>• ✅ Configuration actuelle: {simulationResults.signalStrength > 60 ? 'Optimale' : 'À améliorer'}</li>
+                      <li>• ✅ Qualité signal téléphone: {simulationResults.phoneSignalQuality}</li>
                     </ul>
                   </div>
                 </div>
@@ -427,15 +571,16 @@ const GSMCoverageDemo: React.FC = () => {
               </ul>
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Impact des Obstacles</h3>
+              <h3 className="font-medium text-gray-900 mb-2">Téléphone Mobile</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Les obstacles (bâtiments, reliefs) peuvent bloquer ou atténuer le signal radio.
-                Cette simulation montre visuellement l'effet d'ombre radio.
+                Le téléphone mobile change de couleur selon la qualité du signal reçu :
+                Vert (excellent), Orange (bon), Rouge (faible), Gris (aucun signal).
               </p>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• <strong>Ombre radio :</strong> Zone où le signal est affaibli</li>
-                <li>• <strong>Diffraction :</strong> Le signal contourne partiellement l'obstacle</li>
-                <li>• <strong>Réflexion :</strong> Le signal peut rebondir sur les surfaces</li>
+                <li>• <strong>Signal excellent :</strong> Téléphone vert, pulsation rapide</li>
+                <li>• <strong>Signal bon :</strong> Téléphone orange, pulsation modérée</li>
+                <li>• <strong>Signal faible :</strong> Téléphone rouge, pulsation lente</li>
+                <li>• <strong>Aucun signal :</strong> Téléphone gris, pas de pulsation</li>
               </ul>
             </div>
           </div>
