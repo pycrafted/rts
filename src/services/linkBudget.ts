@@ -8,6 +8,9 @@ interface LinkBudgetParams {
   rxHeight: number; // mètres
   climate: 'temperate' | 'tropical' | 'arid';
   reliability: number; // %
+  diffractionLoss?: number; // Optional diffraction loss in dB
+  polarizationLoss?: number;
+  misalignmentLoss?: number;
 }
 
 interface LinkBudgetResult {
@@ -73,7 +76,10 @@ export class LinkBudgetService {
       txGain,
       rxGain,
       climate,
-      reliability
+      reliability,
+      diffractionLoss = 0,
+      polarizationLoss = 0.5,
+      misalignmentLoss = 0.5
     } = params;
 
     // Perte en espace libre
@@ -82,12 +88,8 @@ export class LinkBudgetService {
     // Pertes atmosphériques (simplifiées)
     const atmosphericLoss = this.calculateAtmosphericLoss(distance, climate);
 
-    // Pertes dues à la polarisation et aux désalignements
-    const polarizationLoss = 0.5; // dB
-    const misalignmentLoss = 0.5; // dB
-
-    // Pertes totales
-    const totalLoss = freeSpaceLoss + atmosphericLoss + polarizationLoss + misalignmentLoss;
+    // Pertes totales (incluant les pertes par diffraction, polarisation et désalignement)
+    const totalLoss = freeSpaceLoss + atmosphericLoss + polarizationLoss + misalignmentLoss + diffractionLoss;
 
     // Gains totaux
     const totalGain = txGain + rxGain;

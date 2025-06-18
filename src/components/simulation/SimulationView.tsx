@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid } from '@react-three/drei';
 import { useSimulationStore } from '@/stores/simulationStore';
@@ -10,6 +10,12 @@ import FresnelZone from './FresnelZone';
 import Obstacle from './Obstacle';
 import SimulationControls from './SimulationControls';
 import SimulationVisualization from './SimulationVisualization';
+
+// Constantes pour les pertes
+const POLARIZATION_LOSS = 0.5; // dB
+const MISALIGNMENT_LOSS = 0.5; // dB
+const DEFAULT_TX_POWER = 20; // dBm
+const DEFAULT_RELIABILITY = 99.9; // %
 
 interface ObstacleData {
   id: string;
@@ -33,12 +39,14 @@ interface DiffractionLosses {
   obstacles: Array<{ loss: number }>;
 }
 
-
 const SimulationView: React.FC<{isActive: boolean}> = ({isActive}) => {
   const { antennas, frequency } = useSimulationStore();
   const [linkBudget, setLinkBudget] = useState<LinkBudgetResult | null>(null);
   const [obstacles, setObstacles] = useState<ObstacleData[]>([]);
   const [diffractionLosses, setDiffractionLosses] = useState<DiffractionLosses>({ total: 0, obstacles: [] });
+  const [error, setError] = useState<string | null>(null);
+
+  // Calcul de la distance entre les antennes
   const distance = useMemo(() => {
     if (antennas.length !== 2) return 0;
     const [ant1, ant2] = antennas;
@@ -48,25 +56,12 @@ const SimulationView: React.FC<{isActive: boolean}> = ({isActive}) => {
     );
   }, [antennas]);
 
-  // Calcul du bilan de liaison et des pertes par diffraction
-  useEffect(() => {
-    if (antennas.length === 2 && distance > 0) {
+  // Calcul des pertes par diffraction
+  const calculateDiffractionLosses = useCallback(() => {
+    if (antennas.length !== 2 || distance <= 0) return;
+
+    try {
       const [ant1, ant2] = antennas;
-
-      // Calcul du bilan de liaison
-      const budget = LinkBudgetService.calculateLinkBudget({
-        frequency,
-        distance,
-        txPower: 20, // dBm
-        txGain: ant1.gain,
-        rxGain: ant2.gain,
-        txHeight: ant1.position[1],
-        rxHeight: ant2.position[1],
-        climate: 'temperate',
-        reliability: 99.9
-      });
-
-      // Calcul des pertes par diffraction
       const diffractionParams = {
         frequency,
         distance,
@@ -80,9 +75,6 @@ const SimulationView: React.FC<{isActive: boolean}> = ({isActive}) => {
       };
 
       const { totalLoss, obstacleLosses } = DiffractionService.calculateTotalDiffractionLoss(diffractionParams);
-
-      // Mise à jour des états
-      setLinkBudget(budget);
       setDiffractionLosses({ total: totalLoss, obstacles: obstacleLosses });
 
       // Mise à jour des obstacles dans la zone de Fresnel
@@ -97,14 +89,61 @@ const SimulationView: React.FC<{isActive: boolean}> = ({isActive}) => {
           diffractionParams
         )
       })));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du calcul des pertes par diffraction');
     }
   }, [antennas, frequency, obstacles, distance]);
+
+  // Calcul du bilan de liaison
+  const calculateLinkBudget = useCallback(() => {
+    if (antennas.length !== 2 || distance <= 0) return;
+
+    try {
+      const [ant1, ant2] = antennas;
+      const budget = LinkBudgetService.calculateLinkBudget({
+        frequency,
+        distance,
+        txPower: DEFAULT_TX_POWER,
+        txGain: ant1.gain,
+        rxGain: ant2.gain,
+        txHeight: ant1.position[1],
+        rxHeight: ant2.position[1],
+        climate: 'temperate',
+        reliability: DEFAULT_RELIABILITY,
+        diffractionLoss: diffractionLosses.total,
+        polarizationLoss: POLARIZATION_LOSS,
+        misalignmentLoss: MISALIGNMENT_LOSS
+      });
+
+      setLinkBudget(budget);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du calcul du bilan de liaison');
+    }
+  }, [antennas, frequency, distance, diffractionLosses.total]);
+
+  // Effet pour le calcul des pertes par diffraction
+  useEffect(() => {
+    calculateDiffractionLosses();
+  }, [calculateDiffractionLosses]);
+
+  // Effet pour le calcul du bilan de liaison
+  useEffect(() => {
+    calculateLinkBudget();
+  }, [calculateLinkBudget]);
 
   return (
     <div className="flex h-full">
       {/* Panneau de contrôle */}
       <div className="w-1/4 p-4 bg-gray-100 overflow-y-auto">
         {isActive ? <SimulationVisualization setObstacles={setObstacles} /> : <SimulationControls />}
+        
+        {error && (
+          <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+
         {linkBudget && (
           <div className="mt-4 p-4 bg-white rounded-lg shadow">
             <h3 className="text-lg font-semibold mb-2">Bilan de Liaison</h3>
@@ -185,13 +224,7 @@ const SimulationView: React.FC<{isActive: boolean}> = ({isActive}) => {
             />
           ))}
 
-          <OrbitControls
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
-            minDistance={5}
-            maxDistance={50}
-          />
+          <OrbitControls />
         </Canvas>
       </div>
     </div>
