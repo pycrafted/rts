@@ -1,0 +1,14 @@
+Crée un composant React avec TypeScript utilisant React Three Fiber et drei pour visualiser une antenne GSM et sa zone de couverture en 3D.
+
+Le composant doit :
+- Afficher une antenne stylisée (forme cylindrique ou modèle simple) à la position [0, 0, 0]
+- Représenter une zone de couverture sous forme de sphère ou de cône transparent (radius paramétrable)
+- Ajouter un obstacle (par exemple un cube ou bâtiment) à une certaine distance, qui coupe visuellement la couverture
+- Simuler la perte de signal : la partie de la sphère/cône de couverture derrière l’obstacle doit apparaître atténuée ou masquée
+- Intégrer OrbitControls pour permettre la navigation dans la scène
+- Ajouter une lumière d’ambiance et directionnelle
+- Encapsuler tout dans un composant `<GsmCoverageScene />` exporté
+
+Utilise `@react-three/fiber` et `@react-three/drei`, avec une structure propre et commentée.
+
+Bonus : ajoute une interface via Leva ou un simple slider React pour permettre de modifier dynamiquement le rayon de couverture.
