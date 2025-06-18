@@ -27,7 +27,7 @@ const OptiqueConnector: React.FC<OptiqueConnectorProps> = ({ position, fiberLeng
   const connectorRef = useRef<THREE.Mesh>(null);
 
   // Calcul de la position sur l'axe X
-  const xPosition = (position / 100) * fiberLength;
+  const xPosition = (position / 100) * fiberLength - fiberLength / 2;
 
   // Animation de pulsation
   useFrame(({ clock }) => {

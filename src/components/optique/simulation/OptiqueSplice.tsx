@@ -21,7 +21,7 @@ interface OptiqueSpliceProps {
 
 const OptiqueSplice: React.FC<OptiqueSpliceProps> = ({ position, fiberLength }) => {
   // Calcul de la position sur l'axe X
-  const xPosition = (position / 100) * fiberLength;
+  const xPosition = (position / 100) * fiberLength - fiberLength / 2;
 
   return (
     <group position={[xPosition, 0, 0]}>

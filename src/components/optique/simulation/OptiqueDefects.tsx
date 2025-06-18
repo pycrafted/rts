@@ -17,7 +17,7 @@ const OptiqueDefects: React.FC<OptiqueDefectsProps> = ({
   severity
 }) => {
   const defectRef = useRef<THREE.Group>(null);
-  const xPosition = (position / 100) * fiberLength;
+  const xPosition = (position / 100) * fiberLength - fiberLength / 2;
 
   // Animation des défauts
   useFrame(({ clock }) => {
