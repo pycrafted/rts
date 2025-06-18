@@ -25,7 +25,7 @@ import { UMTSSimulation } from './pages/UMTSSimulation';
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-blue-50">
         {/* En-tête de l'application */}
         <header className="bg-blue-600 text-white p-4 text-center">
           <h1 className="text-2xl font-bold">Outil de Dimensionnement Télécoms</h1>
@@ -111,7 +111,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Contenu principal de l'application */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto bg-blue-50">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
