@@ -1,17 +1,14 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from '@/pages/Home';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import Simulation from '@/pages/Simulation';
 import Documentation from '@/pages/Documentation';
-import DashboardPage from './pages/DashboardPage';
 import GSMPage from './pages/GSMPage';
-import HertzienPage from './pages/HertzienPage';
-import OptiquePage from './pages/OptiquePage';
 import UMTSPage from './pages/UMTSPage';
 import HertzienForm from './components/hertzien/HertzienForm';
 import Dashboard from './components/dashboard/Dashboard';
 import OptiqueForm from './components/optique/OptiqueForm';
-
+import OptiqueSimulation from './pages/OptiqueSimulation';
+import HertzienSimulation from './pages/HertzienSimulation';
 
 const App: React.FC = () => {
   return (
@@ -25,34 +22,76 @@ const App: React.FC = () => {
           <div className="w-1/6 bg-blue-800 text-white p-4">
             <ul className="space-y-2">
               <li>
-                <a href="/dashboard" className="block p-2 hover:bg-blue-700 rounded flex items-center">
+                <NavLink
+                  to="/dashboard"
+                  className={({ isActive }) =>
+                    `block p-2 hover:bg-blue-700 rounded flex items-center ${
+                      isActive ? 'bg-blue-700' : ''
+                    }`
+                  }
+                >
                   <span className="mr-2">📊</span> Dashboard
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a href="/gsm" className="block p-2 hover:bg-blue-700 rounded flex items-center">
+                <NavLink
+                  to="/gsm"
+                  className={({ isActive }) =>
+                    `block p-2 hover:bg-blue-700 rounded flex items-center ${
+                      isActive ? 'bg-blue-700' : ''
+                    }`
+                  }
+                >
                   <span className="mr-2">📱</span> GSM
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a href="/umts" className="block p-2 hover:bg-blue-700 rounded flex items-center">
+                <NavLink
+                  to="/umts"
+                  className={({ isActive }) =>
+                    `block p-2 hover:bg-blue-700 rounded flex items-center ${
+                      isActive ? 'bg-blue-700' : ''
+                    }`
+                  }
+                >
                   <span className="mr-2">📡</span> UMTS
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a href="/hertzien" className="block p-2 hover:bg-blue-700 rounded flex items-center">
+                <NavLink
+                  to="/hertzien"
+                  className={({ isActive }) =>
+                    `block p-2 hover:bg-blue-700 rounded flex items-center ${
+                      isActive ? 'bg-blue-700' : ''
+                    }`
+                  }
+                >
                   <span className="mr-2">🔌</span> Hertzien
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a href="/optique" className="block p-2 hover:bg-blue-700 rounded flex items-center">
+                <NavLink
+                  to="/optique"
+                  className={({ isActive }) =>
+                    `block p-2 hover:bg-blue-700 rounded flex items-center ${
+                      isActive ? 'bg-blue-700' : ''
+                    }`
+                  }
+                >
                   <span className="mr-2">💡</span> Optique
-                </a>
+                </NavLink>
               </li>
               <li>
-                <a href="/simulation" className="block p-2 hover:bg-blue-700 rounded flex items-center">
+                <NavLink
+                  to="/simulation"
+                  className={({ isActive }) =>
+                    `block p-2 hover:bg-blue-700 rounded flex items-center ${
+                      isActive ? 'bg-blue-700' : ''
+                    }`
+                  }
+                >
                   <span className="mr-2">🖥️</span> Simulation
-                </a>
+                </NavLink>
               </li>
             </ul>
           </div>
@@ -65,7 +104,9 @@ const App: React.FC = () => {
               <Route path="/umts" element={<UMTSPage />} />
               <Route path="/hertzien" element={<HertzienForm />} />
               <Route path="/optique" element={<OptiqueForm />} />
-              <Route path="/simulation/*" element={<Simulation />} />
+              <Route path="/simulation" element={<Simulation />} />
+              <Route path="/simulation/optique" element={<OptiqueSimulation />} />
+              <Route path="/simulation/hertzien" element={<HertzienSimulation />} />
               <Route path="/documentation" element={<Documentation />} />
             </Routes>
           </div>

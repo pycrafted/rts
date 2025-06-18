@@ -1,21 +1,41 @@
-import React,{useState} from 'react';
-import SimulationView from '../components/simulation/SimulationView';
-
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Simulation: React.FC = () => {
-  const [isActive, setIsActive] = useState<boolean>(false);
   return (
-    <div className="p-6 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-bold mb-6 text-blue-800">Simulation et Visualisation</h2>
-        
-        <div className="mb-6">
-          <div className="flex space-x-4 mb-4">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={()=>setIsActive(false)}>Bilan de Liaison</button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={()=>setIsActive(true)}>obstacles</button>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8 text-center">Simulations</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Simulation Optique */}
+        <Link 
+          to="/simulation/optique"
+          className="block p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+        >
+          <div className="text-center">
+            <span className="text-4xl mb-4 block">💡</span>
+            <h2 className="text-2xl font-semibold mb-4">Simulation Optique</h2>
+            <p className="text-gray-600">
+              Visualisez et simulez les liaisons optiques, les pertes par atténuation,
+              et les effets des épissures et connecteurs.
+            </p>
           </div>
-        </div>
-        <SimulationView isActive={isActive} />
+        </Link>
+
+        {/* Simulation Hertzien */}
+        <Link 
+          to="/simulation/hertzien"
+          className="block p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+        >
+          <div className="text-center">
+            <span className="text-4xl mb-4 block">📡</span>
+            <h2 className="text-2xl font-semibold mb-4">Simulation Hertzien</h2>
+            <p className="text-gray-600">
+              Analysez les liaisons hertziennes, les zones de Fresnel,
+              et les effets de la diffraction.
+            </p>
+          </div>
+        </Link>
       </div>
     </div>
   );
