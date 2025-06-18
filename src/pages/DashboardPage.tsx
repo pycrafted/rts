@@ -1,3 +1,20 @@
+/**
+ * Page d'accueil du tableau de bord
+ * 
+ * Cette page présente les différents modules de l'application :
+ * - GSM : Dimensionnement de réseaux GSM
+ * - UMTS : Dimensionnement de réseaux UMTS (3G)
+ * - Hertzien : Dimensionnement de liaisons hertziennes
+ * - Optique : Dimensionnement de réseaux optiques
+ * - Simulation : Simulation et visualisation de réseaux
+ * 
+ * Chaque module est présenté sous forme de carte avec :
+ * - Un titre
+ * - Une description
+ * - Un lien d'accès
+ * 
+ * @component
+ */
 import React from 'react';
 
 const DashboardPage: React.FC = () => {

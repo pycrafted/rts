@@ -1,3 +1,19 @@
+/**
+ * Page de documentation
+ * 
+ * Cette page fournit une documentation complète sur :
+ * - La théorie des liaisons hertziennes
+ * - Les méthodes de calcul
+ * - Les bonnes pratiques
+ * 
+ * La page est organisée en sections avec :
+ * - Une navigation par onglets
+ * - Des explications détaillées
+ * - Des exemples concrets
+ * - Des recommandations pratiques
+ * 
+ * @component
+ */
 import React, { useState } from 'react';
 
 const Documentation: React.FC = () => {

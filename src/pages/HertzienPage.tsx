@@ -1,3 +1,19 @@
+/**
+ * Page de dimensionnement Hertzien
+ * 
+ * Cette page permet de dimensionner les liaisons hertziennes avec :
+ * - Un formulaire de saisie des paramètres
+ * - Des calculs de bilan de liaison
+ * - Des recommandations de dimensionnement
+ * 
+ * Le formulaire inclut :
+ * - La distance de liaison
+ * - La fréquence
+ * - Les gains d'antenne
+ * - Les pertes de propagation
+ * 
+ * @component
+ */
 import React from 'react';
 
 const HertzienPage: React.FC = () => {

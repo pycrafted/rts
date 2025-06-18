@@ -1,3 +1,21 @@
+/**
+ * Service de calcul du bilan de liaison
+ * 
+ * Ce service gère les calculs de bilan de liaison pour :
+ * - Les liaisons hertziennes
+ * - Les liaisons optiques
+ * 
+ * Il prend en compte :
+ * - Les pertes en espace libre
+ * - Les pertes atmosphériques
+ * - Les pertes de polarisation
+ * - Les pertes de désalignement
+ * - Les gains d'antenne
+ */
+
+/**
+ * Interface définissant les paramètres du bilan de liaison
+ */
 interface LinkBudgetParams {
   frequency: number; // MHz
   distance: number; // mètres
@@ -13,6 +31,9 @@ interface LinkBudgetParams {
   misalignmentLoss?: number;
 }
 
+/**
+ * Interface définissant les résultats du bilan de liaison
+ */
 interface LinkBudgetResult {
   freeSpaceLoss: number;
   totalLoss: number;

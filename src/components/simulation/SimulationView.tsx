@@ -1,3 +1,14 @@
+/**
+ * Composant de vue de simulation hertzienne
+ * 
+ * Ce composant gère l'affichage de la simulation hertzienne avec deux modes :
+ * - Bilan de liaison : affiche les calculs de pertes et gains
+ * - Obstacles : affiche la visualisation des zones de Fresnel et obstacles
+ * 
+ * @component
+ * @param {Object} props - Les propriétés du composant
+ * @param {boolean} props.isActive - Indique si le mode obstacles est actif
+ */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid } from '@react-three/drei';
@@ -39,7 +50,11 @@ interface DiffractionLosses {
   obstacles: Array<{ loss: number }>;
 }
 
-const SimulationView: React.FC<{isActive: boolean}> = ({isActive}) => {
+interface SimulationViewProps {
+  isActive: boolean;
+}
+
+const SimulationView: React.FC<SimulationViewProps> = ({ isActive }) => {
   const { antennas, frequency } = useSimulationStore();
   const [linkBudget, setLinkBudget] = useState<LinkBudgetResult | null>(null);
   const [obstacles, setObstacles] = useState<ObstacleData[]>([]);

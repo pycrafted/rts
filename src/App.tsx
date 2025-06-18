@@ -1,3 +1,13 @@
+/**
+ * Composant principal de l'application
+ * 
+ * Ce composant gère :
+ * - La structure générale de l'application
+ * - Le routage entre les différentes pages
+ * - Le menu de navigation latéral
+ * 
+ * @component
+ */
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import Simulation from '@/pages/Simulation';
@@ -14,11 +24,13 @@ const App: React.FC = () => {
   return (
     <Router>
       <div className="min-h-screen flex flex-col">
+        {/* En-tête de l'application */}
         <header className="bg-blue-600 text-white p-4 text-center">
           <h1 className="text-2xl font-bold">Outil de Dimensionnement Télécoms</h1>
         </header>
+
         <div className="flex flex-1 overflow-hidden">
-          {/* Menu latéral */}
+          {/* Menu de navigation latéral */}
           <div className="w-1/6 bg-blue-800 text-white p-4">
             <ul className="space-y-2">
               <li>
@@ -95,7 +107,8 @@ const App: React.FC = () => {
               </li>
             </ul>
           </div>
-          {/* Contenu principal */}
+
+          {/* Contenu principal de l'application */}
           <div className="flex-1 overflow-y-auto">
             <Routes>
               <Route path="/" element={<Dashboard />} />

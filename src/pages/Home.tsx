@@ -1,3 +1,20 @@
+/**
+ * Page d'accueil principale
+ * 
+ * Cette page sert de point d'entrée pour l'application avec :
+ * - Un titre de bienvenue
+ * - Une section Simulation avec des liens vers :
+ *   - Bilan de Liaison
+ *   - Zone de Fresnel
+ *   - Diffraction
+ * - Une section Documentation avec des informations sur :
+ *   - Théorie des liaisons hertziennes
+ *   - Méthodes de calcul
+ *   - Bonnes pratiques
+ *   - Exemples d'utilisation
+ * 
+ * @component
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 

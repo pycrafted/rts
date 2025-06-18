@@ -1,3 +1,13 @@
+/**
+ * Composant principal de la simulation optique
+ * 
+ * Ce composant gère :
+ * - La visualisation 3D de la fibre optique
+ * - Le calcul du bilan de liaison
+ * - L'affichage des contrôles et du graphique d'atténuation
+ * 
+ * @component
+ */
 import React, { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -7,19 +17,25 @@ import OptiqueConnector from '@/components/optique/simulation/OptiqueConnector';
 import OptiqueAttenuationGraph from '@/components/optique/simulation/OptiqueAttenuationGraph';
 import OptiqueControls from '@/components/optique/simulation/OptiqueControls';
 
+/**
+ * Interface définissant la structure des résultats du bilan de liaison
+ */
 interface LinkBudgetResult {
-  totalLoss: number;
-  fiberLoss: number;
-  spliceLoss: number;
-  connectorLoss: number;
-  margin: number;
+  totalLoss: number;    // Perte totale en dB
+  fiberLoss: number;    // Perte dans la fibre en dB
+  spliceLoss: number;   // Perte due aux épissures en dB
+  connectorLoss: number;// Perte due aux connecteurs en dB
+  margin: number;       // Marge disponible en dB
 }
 
 const OptiqueSimulationView: React.FC = () => {
-  const [fiberLength, setFiberLength] = useState(20);
-  const [splices, setSplices] = useState<Array<{position: number}>>([]);
-  const [connectors, setConnectors] = useState<Array<{position: number}>>([]);
-  const [attenuation, setAttenuation] = useState(0.35);
+  // États pour les paramètres de la simulation
+  const [fiberLength, setFiberLength] = useState(20);  // Longueur de la fibre en km
+  const [splices, setSplices] = useState<Array<{position: number}>>([]);  // Liste des épissures
+  const [connectors, setConnectors] = useState<Array<{position: number}>>([]);  // Liste des connecteurs
+  const [attenuation, setAttenuation] = useState(0.35);  // Atténuation en dB/km
+
+  // État pour les résultats du bilan de liaison
   const [linkBudget, setLinkBudget] = useState<LinkBudgetResult>({
     totalLoss: 0,
     fiberLoss: 0,
@@ -29,10 +45,13 @@ const OptiqueSimulationView: React.FC = () => {
   });
 
   // Constantes pour les pertes
-  const SPLICE_LOSS = 0.1; // dB par épissure
-  const CONNECTOR_LOSS = 0.5; // dB par connecteur
-  const POWER_BUDGET = 20; // dB (budget de puissance typique)
+  const SPLICE_LOSS = 0.1;     // Perte par épissure en dB
+  const CONNECTOR_LOSS = 0.5;  // Perte par connecteur en dB
+  const POWER_BUDGET = 20;     // Budget de puissance typique en dB
 
+  /**
+   * Calcule le bilan de liaison à chaque modification des paramètres
+   */
   useEffect(() => {
     // Calcul des pertes
     const fiberLoss = fiberLength * attenuation;
@@ -52,6 +71,7 @@ const OptiqueSimulationView: React.FC = () => {
 
   return (
     <div className="flex h-screen">
+      {/* Panneau de contrôle et résultats */}
       <div className="w-1/4 p-4 bg-gray-100">
         <OptiqueControls
           fiberLength={fiberLength}
@@ -104,6 +124,8 @@ const OptiqueSimulationView: React.FC = () => {
           attenuation={attenuation}
         />
       </div>
+
+      {/* Visualisation 3D */}
       <div className="w-3/4">
         <Canvas camera={{ position: [0, 5, 10], fov: 75 }}>
           <ambientLight intensity={0.5} />
@@ -115,6 +137,7 @@ const OptiqueSimulationView: React.FC = () => {
             <OptiqueSplice
               key={`splice-${index}`}
               position={splice.position}
+              fiberLength={fiberLength}
             />
           ))}
           
@@ -122,6 +145,7 @@ const OptiqueSimulationView: React.FC = () => {
             <OptiqueConnector
               key={`connector-${index}`}
               position={connector.position}
+              fiberLength={fiberLength}
             />
           ))}
           

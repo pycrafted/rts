@@ -1,5 +1,14 @@
+/**
+ * Composant de graphique d'atténuation pour la simulation optique
+ * 
+ * Ce composant affiche un graphique montrant :
+ * - L'atténuation totale le long de la fibre
+ * - Les points d'épissure et leurs pertes
+ * - Les points de connecteur et leurs pertes
+ * 
+ * @component
+ */
 import React from 'react';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,7 +19,9 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { Line } from 'react-chartjs-2';
 
+// Enregistrement des composants Chart.js nécessaires
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -34,34 +45,53 @@ const OptiqueAttenuationGraph: React.FC<OptiqueAttenuationGraphProps> = ({
   connectors,
   attenuation,
 }) => {
-  const calculateAttenuation = (position: number) => {
-    let totalAttenuation = (position / 1000) * attenuation; // dB/km to dB/m
+  // Génération des points de données pour le graphique
+  const generateData = () => {
+    const points = 100; // Nombre de points sur le graphique
+    const data = [];
+    const labels = [];
 
-    // Ajouter les pertes des épissures
-    splices.forEach((splice) => {
-      if (splice.position <= position) {
-        totalAttenuation += 0.1; // 0.1 dB perte par épissure
-      }
-    });
+    // Constantes pour les pertes
+    const SPLICE_LOSS = 0.1; // dB par épissure
+    const CONNECTOR_LOSS = 0.5; // dB par connecteur
 
-    // Ajouter les pertes des connecteurs
-    connectors.forEach((connector) => {
-      if (connector.position <= position) {
-        totalAttenuation += 0.3; // 0.3 dB perte par connecteur
-      }
-    });
+    let totalLoss = 0;
 
-    return totalAttenuation;
+    for (let i = 0; i <= points; i++) {
+      const position = (i / points) * fiberLength;
+      labels.push(position.toFixed(1));
+
+      // Calcul de la perte de base due à la fibre
+      totalLoss = position * attenuation;
+
+      // Ajout des pertes d'épissure
+      splices.forEach(splice => {
+        if (splice.position <= position) {
+          totalLoss += SPLICE_LOSS;
+        }
+      });
+
+      // Ajout des pertes de connecteur
+      connectors.forEach(connector => {
+        if (connector.position <= position) {
+          totalLoss += CONNECTOR_LOSS;
+        }
+      });
+
+      data.push(totalLoss);
+    }
+
+    return { labels, data };
   };
 
-  const data = {
-    labels: Array.from({ length: 11 }, (_, i) => (i * fiberLength / 10).toFixed(1)),
+  const { labels, data } = generateData();
+
+  const chartData = {
+    labels,
     datasets: [
       {
         label: 'Atténuation (dB)',
-        data: Array.from({ length: 11 }, (_, i) => 
-          calculateAttenuation(i * fiberLength / 10)
-        ),
+        data: data,
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1,
       },
@@ -83,7 +113,7 @@ const OptiqueAttenuationGraph: React.FC<OptiqueAttenuationGraphProps> = ({
       x: {
         title: {
           display: true,
-          text: 'Position (m)',
+          text: 'Position (km)',
         },
       },
       y: {
@@ -96,8 +126,8 @@ const OptiqueAttenuationGraph: React.FC<OptiqueAttenuationGraphProps> = ({
   };
 
   return (
-    <div className="mt-8 p-4 bg-white rounded-lg shadow">
-      <Line data={data} options={options} />
+    <div className="mt-6 p-4 bg-white rounded-lg shadow">
+      <Line data={chartData} options={options} />
     </div>
   );
 };

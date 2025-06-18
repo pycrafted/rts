@@ -1,3 +1,17 @@
+/**
+ * Page d'accueil des simulations
+ * 
+ * Cette page présente les différentes options de simulation disponibles :
+ * - Simulation Optique : pour les liaisons fibre optique
+ * - Simulation Hertzien : pour les liaisons hertziennes
+ * 
+ * Chaque option est présentée sous forme de carte cliquable avec :
+ * - Une icône représentative
+ * - Un titre
+ * - Une description des fonctionnalités
+ * 
+ * @component
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -6,8 +20,9 @@ const Simulation: React.FC = () => {
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8 text-center">Simulations</h1>
       
+      {/* Grille des options de simulation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Simulation Optique */}
+        {/* Carte Simulation Optique */}
         <Link 
           to="/simulation/optique"
           className="block p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow"
@@ -22,7 +37,7 @@ const Simulation: React.FC = () => {
           </div>
         </Link>
 
-        {/* Simulation Hertzien */}
+        {/* Carte Simulation Hertzien */}
         <Link 
           to="/simulation/hertzien"
           className="block p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow"

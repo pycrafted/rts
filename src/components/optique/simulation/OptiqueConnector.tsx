@@ -1,44 +1,58 @@
-import React from 'react';
+/**
+ * Composant 3D d'un connecteur optique
+ * 
+ * Ce composant crée une représentation 3D d'un connecteur avec :
+ * - Un cylindre plus large que la fibre
+ * - Un effet de brillance distinct
+ * - Une position alignée sur l'axe X de la fibre
+ * - Une animation de pulsation
+ * 
+ * @component
+ * @param {Object} props - Les propriétés du composant
+ * @param {number} props.position - Position du connecteur (0-100%)
+ * @param {number} props.fiberLength - Longueur de la fibre (en unités 3D)
+ */
+import React, { useRef } from 'react';
 import { Cylinder } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 
 interface OptiqueConnectorProps {
   position: number;
+  fiberLength: number;
 }
 
-const OptiqueConnector: React.FC<OptiqueConnectorProps> = ({ position }) => {
+const OptiqueConnector: React.FC<OptiqueConnectorProps> = ({ position, fiberLength }) => {
+  // Référence pour l'animation
+  const connectorRef = useRef<THREE.Mesh>(null);
+
+  // Calcul de la position sur l'axe X
+  const xPosition = (position / 100) * fiberLength;
+
+  // Animation de pulsation
+  useFrame(({ clock }) => {
+    if (connectorRef.current) {
+      const time = clock.getElapsedTime();
+      const material = connectorRef.current.material as THREE.MeshPhongMaterial;
+      material.opacity = 0.6 + Math.sin(time * 3) * 0.2;
+    }
+  });
+
   return (
-    <group position={[position, 0, 0]}>
-      {/* Corps du connecteur */}
-      <Cylinder
-        args={[0.2, 0.2, 0.4, 16]}
-        rotation={[Math.PI / 2, 0, 0]}
-      >
-        <meshStandardMaterial
-          color="#888888"
-          metalness={0.8}
-          roughness={0.2}
-        />
-      </Cylinder>
-
-      {/* Indicateur de perte */}
-      <mesh position={[0, 0.3, 0]}>
-        <boxGeometry args={[0.1, 0.1, 0.1]} />
-        <meshBasicMaterial color="#ff0000" />
-      </mesh>
-
-      {/* Détails du connecteur */}
-      <Cylinder
-        args={[0.15, 0.15, 0.1, 16]}
-        position={[0.2, 0, 0]}
-        rotation={[Math.PI / 2, 0, 0]}
-      >
-        <meshStandardMaterial
-          color="#666666"
-          metalness={0.9}
-          roughness={0.1}
-        />
-      </Cylinder>
-    </group>
+    <Cylinder
+      ref={connectorRef}
+      args={[0.2, 0.2, 0.4, 32]}
+      position={[xPosition, 0, 0]}
+      rotation={[Math.PI / 2, 0, 0]}
+    >
+      <meshPhongMaterial
+        color="#0000ff"
+        transparent
+        opacity={0.7}
+        emissive="#0000ff"
+        emissiveIntensity={0.4}
+      />
+    </Cylinder>
   );
 };
 

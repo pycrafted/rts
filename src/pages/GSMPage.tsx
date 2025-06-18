@@ -1,3 +1,18 @@
+/**
+ * Page de dimensionnement GSM
+ * 
+ * Cette page permet de dimensionner les réseaux GSM avec :
+ * - Un formulaire de saisie des paramètres
+ * - Des calculs de couverture
+ * - Des recommandations de dimensionnement
+ * 
+ * Le formulaire inclut :
+ * - La zone de couverture
+ * - Le nombre d'utilisateurs
+ * - Les contraintes de qualité de service
+ * 
+ * @component
+ */
 import React from 'react';
 import GSMForm from '../components/gsm/GSMForm';
 

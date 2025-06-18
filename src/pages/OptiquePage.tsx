@@ -1,3 +1,19 @@
+/**
+ * Page de dimensionnement Optique
+ * 
+ * Cette page permet de dimensionner les réseaux optiques avec :
+ * - Un formulaire de saisie des paramètres
+ * - Des calculs d'atténuation
+ * - Des recommandations de dimensionnement
+ * 
+ * Le formulaire inclut :
+ * - La longueur de fibre
+ * - Le type de fibre
+ * - Les pertes par épissure
+ * - Les pertes par connecteur
+ * 
+ * @component
+ */
 import React from 'react';
 
 const OptiquePage: React.FC = () => {
