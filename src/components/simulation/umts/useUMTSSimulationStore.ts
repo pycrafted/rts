@@ -102,7 +102,7 @@ const calculateNodeBsRequired = (loadFactor: number): number => {
 // Optimisation : Générer des positions avec moins de calculs
 const generateRandomPositions = (count: number, loadFactor: number) => {
   const positions = [];
-  const coverageRadius = 1000; // 1km de rayon
+  const coverageRadius = 4000; // 4km de rayon (doublé pour la carte très élargie)
   
   // Pré-calculer les valeurs communes
   const loadFactorInverse = 1 - loadFactor;
@@ -114,7 +114,7 @@ const generateRandomPositions = (count: number, loadFactor: number) => {
     
     const x = Math.cos(angle) * distance;
     const z = Math.sin(angle) * distance;
-    const y = Math.random() * 50; // Hauteur variable
+    const y = Math.random() * 120; // Hauteur variable augmentée
     
     // QoS basée sur la distance et le facteur de charge - optimisé
     const distanceFactor = 1 - (distance / coverageRadius);

@@ -66,15 +66,43 @@ const exampleValues: UMTSFormValues = {
 const scenarioPresets: { [key: string]: { values: UMTSFormValues; msg: string } } = {
   urbain: {
     values: { area: '10', users: '2000', voice: '12.2', data: '128', video: '256', load: '60' },
-    msg: "Scénario urbain : 10 km², 2000 utilisateurs, débits standards. Cas typique de planification 3G en ville."
+    msg: "Scénario urbain : 10 km², 2000 utilisateurs, débits standards (voix 12.2 kbps, data 128 kbps, vidéo 256 kbps, facteur de charge 60%). Cas typique de planification 3G en ville."
   },
   rural: {
     values: { area: '50', users: '500', voice: '8', data: '64', video: '128', load: '50' },
-    msg: "Scénario rural : 50 km², 500 utilisateurs, débits plus faibles, facteur de charge réduit. Moins de cellules nécessaires, mais couverture plus difficile."
+    msg: "Scénario rural : 50 km², 500 utilisateurs, débits plus faibles (voix 8 kbps, data 64 kbps, vidéo 128 kbps), facteur de charge 50%. Moins de cellules nécessaires, mais couverture plus difficile."
   },
   campus: {
     values: { area: '2', users: '1000', voice: '12.2', data: '384', video: '512', load: '70' },
-    msg: "Scénario campus : 2 km², 1000 utilisateurs, débits élevés (data/vidéo), facteur de charge important. Forte sollicitation sur une petite zone."
+    msg: "Scénario campus : 2 km², 1000 utilisateurs, débits élevés (data 384 kbps, vidéo 512 kbps), facteur de charge 70%. Forte sollicitation sur une petite zone."
+  },
+  centre_ville: {
+    values: { area: '5', users: '3000', voice: '12.2', data: '256', video: '384', load: '75' },
+    msg: "Scénario centre-ville : 5 km², 3000 utilisateurs, débits élevés, facteur de charge 75%. Densité très élevée, forte demande de capacité."
+  },
+  zone_residentielle: {
+    values: { area: '15', users: '1500', voice: '12.2', data: '96', video: '192', load: '55' },
+    msg: "Scénario zone résidentielle : 15 km², 1500 utilisateurs, débits modérés, facteur de charge 55%. Usage principalement en soirée."
+  },
+  zone_industrielle: {
+    values: { area: '8', users: '800', voice: '12.2', data: '192', video: '256', load: '65' },
+    msg: "Scénario zone industrielle : 8 km², 800 utilisateurs, débits moyens-élevés, facteur de charge 65%. Usage professionnel et industriel."
+  },
+  aeroport: {
+    values: { area: '3', users: '2000', voice: '12.2', data: '256', video: '384', load: '80' },
+    msg: "Scénario aéroport : 3 km², 2000 utilisateurs, débits élevés, facteur de charge 80%. Forte demande de capacité pour les voyageurs."
+  },
+  zone_touristique: {
+    values: { area: '20', users: '1200', voice: '12.2', data: '192', video: '256', load: '70' },
+    msg: "Scénario zone touristique : 20 km², 1200 utilisateurs, débits moyens-élevés, facteur de charge 70%. Variation saisonnière importante."
+  },
+  autoroute: {
+    values: { area: '30', users: '600', voice: '12.2', data: '128', video: '192', load: '45' },
+    msg: "Scénario autoroute : 30 km², 600 utilisateurs, débits modérés, facteur de charge 45%. Couverture linéaire avec sites espacés."
+  },
+  zone_ruraux_avances: {
+    values: { area: '100', users: '300', voice: '8', data: '32', video: '64', load: '40' },
+    msg: "Scénario zone rurale avancée : 100 km², 300 utilisateurs, débits faibles, facteur de charge 40%. Défis de couverture et de rentabilité."
   }
 };
 
@@ -85,25 +113,34 @@ const termesUMTS = [
   { id: 'secteur', terme: 'Secteur', definition: "Subdivision d'une cellule, généralement couverte par une antenne orientée.", exemple: 'Un site tri-secteur couvre 3 directions.' },
   { id: 'erlang', terme: 'Erlang', definition: "Unité de trafic télécoms correspondant à une communication continue sur une heure.", unite: 'Erlang', exemple: '10 abonnés parlant 6 minutes chacun = 1 Erlang.' },
   { id: 'wcdma', terme: 'WCDMA', definition: "Wideband Code Division Multiple Access : technologie d'accès radio utilisée par l'UMTS.", exemple: 'La 3G utilise la modulation WCDMA.' },
-  // Ajoute d'autres termes UMTS ici
+  { id: 'gos', terme: 'GoS (Grade of Service)', definition: "Probabilité de blocage d'un appel en raison de la congestion du réseau.", unite: '%', exemple: 'Un GoS de 2% signifie 2% d\'appels bloqués.' },
+  { id: 'facteur_charge', terme: 'Facteur de charge', definition: "Pourcentage de la capacité maximale utilisée par le réseau.", unite: '%', exemple: 'Un facteur de charge de 60% est typique en UMTS.' },
+  { id: 'efficacite_spectrale', terme: 'Efficacité spectrale', definition: "Nombre de bits transmis par seconde par Hz de bande passante.", unite: 'bits/s/Hz', exemple: 'L\'efficacité spectrale WCDMA est d\'environ 0.75 bits/s/Hz.' },
+  { id: 'facteur_securite', terme: 'Facteur de sécurité', definition: "Marge ajoutée au trafic calculé pour tenir compte des variations et pics de charge.", exemple: 'Un facteur de 1.3 ajoute 30% de marge au trafic.' },
+  { id: 'densite_utilisateurs', terme: 'Densité d\'utilisateurs', definition: "Nombre d'utilisateurs par unité de surface.", unite: 'utilisateurs/km²', exemple: 'Une densité de 200 util/km² indique une zone urbaine.' },
+  { id: 'charge_cellule', terme: 'Charge par cellule', definition: "Trafic moyen supporté par chaque cellule.", unite: 'kbps/cellule', exemple: 'Une charge de 1500 kbps/cellule est typique en zone urbaine.' },
+  { id: 'couverture_cellule', terme: 'Couverture par cellule', definition: "Surface géographique couverte par une cellule selon le type de zone.", unite: 'km²', exemple: '1 km² en urbain, 5 km² en rural.' },
+  { id: 'capacite_cellule', terme: 'Capacité par cellule', definition: "Débit maximal supporté par une cellule selon le type de zone.", unite: 'kbps', exemple: '2048 kbps en urbain, 5120 kbps en rural.' },
+  { id: 'amr', terme: 'AMR (Adaptive Multi-Rate)', definition: "Codec voix adaptatif utilisé en UMTS pour optimiser la qualité selon les conditions radio.", exemple: 'AMR 12.2 kbps pour une qualité voix optimale.' },
+  { id: 'hsdpa', terme: 'HSDPA', definition: "High Speed Downlink Packet Access : évolution UMTS pour augmenter les débits data.", exemple: 'HSDPA permet des débits jusqu\'à 14.4 Mbps.' },
+  { id: 'hsupa', terme: 'HSUPA', definition: "High Speed Uplink Packet Access : évolution UMTS pour augmenter les débits montants.", exemple: 'HSUPA permet des débits montants jusqu\'à 5.76 Mbps.' },
+  { id: 'soft_handover', terme: 'Soft Handover', definition: "Transfert progressif d'une communication entre cellules en UMTS.", exemple: 'Permet une meilleure continuité de service qu\'en GSM.' },
+  { id: 'puissance_emission', terme: 'Puissance d\'émission', definition: "Puissance radio émise par l'antenne NodeB pour assurer la couverture.", unite: 'W', exemple: 'Typiquement 20-40W par secteur.' },
+  { id: 'interference', terme: 'Interférences', definition: "Perturbations radio qui dégradent la qualité du signal UMTS.", exemple: 'Les interférences limitent la capacité du réseau.' },
+  { id: 'planification_frequence', terme: 'Planification de fréquences', definition: "Répartition des canaux radio pour éviter les interférences entre cellules adjacentes.", exemple: 'Utilise des motifs de réutilisation de fréquences.' }
 ];
 
 const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ onSubmit }) => {
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<Partial<UMTSFormValues>>({});
   const [showResults, setShowResults] = useState(false);
-  const [showWhy, setShowWhy] = useState<{ [k: string]: boolean }>({});
   const [exampleMsg, setExampleMsg] = useState<string | null>(null);
   const [scenario, setScenario] = useState('');
   const [showGlossaire, setShowGlossaire] = useState(false);
-  const [glossaireFocus, setGlossaireFocus] = useState<string | undefined>(undefined);
+  const [glossaireFocus] = useState<string | undefined>(undefined);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
-  };
-
-  const handleShowWhy = (field: string) => {
-    setShowWhy((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   const getDynamicComment = (field: keyof UMTSFormValues) => {
@@ -111,47 +148,115 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
     if (!v) return pedagogicHelp[field].short + ' ' + pedagogicHelp[field].example;
     const num = Number(v);
     if (isNaN(num)) return "Veuillez entrer une valeur numérique.";
+    
+    // Exemples de feedback pédagogique amélioré
     if (field === 'area') {
-      if (num < 1) return "Petite zone, peu de cellules nécessaires.";
-      if (num > 100) return "Grande zone, prévoir plus de sites.";
-      return "Zone typique pour une ville ou un campus.";
+      if (num < 1) return "Très petite zone (campus, site industriel).";
+      if (num < 5) return "Petite zone (quartier, centre-ville).";
+      if (num < 20) return "Zone moyenne (ville moyenne).";
+      if (num < 100) return "Grande zone (agglomération).";
+      return "Très grande zone (région, département).";
     }
+    
     if (field === 'users') {
       if (num < 100) return "Peu d'utilisateurs, faible trafic.";
-      if (num > 10000) return "Beaucoup d'utilisateurs, attention à la capacité.";
-      return "Nombre d'utilisateurs courant.";
+      if (num < 500) return "Nombre d'utilisateurs modéré.";
+      if (num < 2000) return "Nombre d'utilisateurs courant.";
+      if (num < 10000) return "Beaucoup d'utilisateurs, attention à la capacité.";
+      return "Très nombreux utilisateurs, forte sollicitation du réseau.";
     }
+    
     if (field === 'voice') {
       if (num < 8) return "Débit voix très faible, qualité dégradée.";
-      if (num > 16) return "Débit voix élevé, bonne qualité mais plus de ressources nécessaires.";
-      return "Débit voix standard (AMR).";
+      if (num < 12) return "Débit voix faible, qualité acceptable.";
+      if (num < 16) return "Débit voix standard (AMR).";
+      return "Débit voix élevé, bonne qualité mais plus de ressources nécessaires.";
     }
+    
     if (field === 'data') {
-      if (num < 32) return "Débit data faible, usage basique.";
-      if (num > 384) return "Débit data élevé, attention à la capacité.";
-      return "Débit data courant pour 3G.";
+      if (num < 64) return "Débit data faible, usage basique (browsing).";
+      if (num < 128) return "Débit data modéré, usage standard.";
+      if (num < 384) return "Débit data élevé, usage intensif.";
+      if (num < 1000) return "Débit data très élevé, usage professionnel.";
+      return "Débit data extrême, attention à la capacité réseau.";
     }
+    
     if (field === 'video') {
       if (num < 64) return "Débit vidéo faible, qualité basse.";
-      if (num > 512) return "Débit vidéo élevé, attention à la bande passante.";
-      return "Débit vidéo typique pour mobile.";
+      if (num < 128) return "Débit vidéo modéré, qualité acceptable.";
+      if (num < 256) return "Débit vidéo standard, bonne qualité.";
+      if (num < 512) return "Débit vidéo élevé, très bonne qualité.";
+      return "Débit vidéo très élevé, qualité HD, attention à la bande passante.";
     }
+    
     if (field === 'load') {
-      if (num < 40) return "Facteur de charge faible, réseau sous-utilisé.";
-      if (num > 80) return "Facteur de charge élevé, risque de saturation.";
-      return "Facteur de charge courant (60%).";
+      if (num < 30) return "Facteur de charge très faible, réseau sous-utilisé.";
+      if (num < 50) return "Facteur de charge faible, marge importante.";
+      if (num < 70) return "Facteur de charge optimal (60-70%).";
+      if (num < 85) return "Facteur de charge élevé, surveillance requise.";
+      return "Facteur de charge très élevé, risque de saturation.";
     }
+    
     return '';
   };
 
   const validate = () => {
     const newErrors: Partial<UMTSFormValues> = {};
-    if (!values.area || isNaN(Number(values.area))) newErrors.area = 'Zone invalide';
-    if (!values.users || isNaN(Number(values.users))) newErrors.users = 'Nombre d\'utilisateurs invalide';
-    if (!values.voice || isNaN(Number(values.voice))) newErrors.voice = 'Débit voix invalide';
-    if (!values.data || isNaN(Number(values.data))) newErrors.data = 'Débit data invalide';
-    if (!values.video || isNaN(Number(values.video))) newErrors.video = 'Débit vidéo invalide';
-    if (!values.load || isNaN(Number(values.load))) newErrors.load = 'Facteur de charge invalide';
+    
+    // Validation de la zone
+    if (!values.area || isNaN(Number(values.area))) {
+      newErrors.area = 'Zone invalide';
+    } else if (Number(values.area) <= 0) {
+      newErrors.area = 'La zone doit être positive';
+    } else if (Number(values.area) > 500) {
+      newErrors.area = 'Zone trop importante (> 500 km²)';
+    }
+    
+    // Validation du nombre d'utilisateurs
+    if (!values.users || isNaN(Number(values.users))) {
+      newErrors.users = 'Nombre d\'utilisateurs invalide';
+    } else if (Number(values.users) <= 0) {
+      newErrors.users = 'Le nombre d\'utilisateurs doit être positif';
+    } else if (Number(values.users) > 50000) {
+      newErrors.users = 'Nombre d\'utilisateurs trop élevé (> 50000)';
+    }
+    
+    // Validation du débit voix
+    if (!values.voice || isNaN(Number(values.voice))) {
+      newErrors.voice = 'Débit voix invalide';
+    } else if (Number(values.voice) <= 0) {
+      newErrors.voice = 'Le débit voix doit être positif';
+    } else if (Number(values.voice) > 20) {
+      newErrors.voice = 'Débit voix trop élevé (> 20 kbps)';
+    }
+    
+    // Validation du débit data
+    if (!values.data || isNaN(Number(values.data))) {
+      newErrors.data = 'Débit data invalide';
+    } else if (Number(values.data) <= 0) {
+      newErrors.data = 'Le débit data doit être positif';
+    } else if (Number(values.data) > 2000) {
+      newErrors.data = 'Débit data trop élevé (> 2000 kbps)';
+    }
+    
+    // Validation du débit vidéo
+    if (!values.video || isNaN(Number(values.video))) {
+      newErrors.video = 'Débit vidéo invalide';
+    } else if (Number(values.video) <= 0) {
+      newErrors.video = 'Le débit vidéo doit être positif';
+    } else if (Number(values.video) > 2000) {
+      newErrors.video = 'Débit vidéo trop élevé (> 2000 kbps)';
+    }
+    
+    // Validation du facteur de charge
+    if (!values.load || isNaN(Number(values.load))) {
+      newErrors.load = 'Facteur de charge invalide';
+    } else if (Number(values.load) <= 0) {
+      newErrors.load = 'Le facteur de charge doit être positif';
+    } else if (Number(values.load) > 100) {
+      newErrors.load = 'Le facteur de charge ne peut dépasser 100%';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -181,15 +286,10 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
     }
   };
 
-  const handleOpenGlossaire = (id: string) => {
-    setGlossaireFocus(id);
-    setShowGlossaire(true);
-  };
-
   return (
     <>
       <Glossaire open={showGlossaire} onClose={() => setShowGlossaire(false)} focusId={glossaireFocus} termes={termesUMTS} />
-      <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 mt-8">
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 mt-8 border border-blue-100">
         <div className="flex justify-end mb-2">
           <button type="button" onClick={() => setShowGlossaire(true)} className="flex items-center gap-2 text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-light">
             <span role="img" aria-label="Glossaire">📖</span> Glossaire
@@ -206,120 +306,137 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
             <option value="urbain">Zone urbaine</option>
             <option value="rural">Zone rurale</option>
             <option value="campus">Campus</option>
+            <option value="centre_ville">Centre-ville</option>
+            <option value="zone_residentielle">Zone résidentielle</option>
+            <option value="zone_industrielle">Zone industrielle</option>
+            <option value="aeroport">Aéroport</option>
+            <option value="zone_touristique">Zone touristique</option>
+            <option value="autoroute">Autoroute</option>
+            <option value="zone_ruraux_avances">Zone rurale avancée</option>
           </select>
         </div>
         <button onClick={handleFillExample} className="mb-2 bg-success-light text-success-dark px-4 py-2 rounded-lg text-sm font-semibold hover:bg-success transition-colors w-full focus:outline-none focus:ring-2 focus:ring-success-light flex items-center gap-2">
           <span role="img" aria-label="Exemple">✨</span> Remplir avec un exemple
         </button>
         {exampleMsg && <div className="mb-2 text-xs text-success-dark bg-success-light/40 rounded px-3 py-2">{exampleMsg}</div>}
-        {/* Zone à couvrir */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
-            Zone à couvrir (km²)
-            <InfoBulle content={pedagogicHelp.area.why + ' ' + pedagogicHelp.area.example} className="group-hover:underline group-hover:text-primary-dark" />
-          </label>
-          <input
-            type="number"
-            name="area"
-            value={values.area}
-            onChange={handleChange}
-            aria-invalid={!!errors.area}
-            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.area ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            placeholder="Ex : 10"
-          />
-          {errors.area && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.area}</span>}
-          <div className="text-xs text-gray-500">{getDynamicComment('area')}</div>
+        
+        {/* Grille de champs de saisie */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Zone à couvrir */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+              Zone à couvrir (km²)
+              <InfoBulle content={pedagogicHelp.area.why + ' ' + pedagogicHelp.area.example} className="group-hover:underline group-hover:text-primary-dark" />
+            </label>
+            <input
+              type="number"
+              name="area"
+              value={values.area}
+              onChange={handleChange}
+              aria-invalid={!!errors.area}
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.area ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+              placeholder="Ex : 10"
+            />
+            {errors.area && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.area}</span>}
+            <div className="text-xs text-gray-500">{getDynamicComment('area')}</div>
+          </div>
+          
+          {/* Nombre d'utilisateurs */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+              Nombre d'utilisateurs
+              <InfoBulle content={pedagogicHelp.users.why + ' ' + pedagogicHelp.users.example} className="group-hover:underline group-hover:text-primary-dark" />
+            </label>
+            <input
+              type="number"
+              name="users"
+              value={values.users}
+              onChange={handleChange}
+              aria-invalid={!!errors.users}
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.users ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+              placeholder="Ex : 2000"
+            />
+            {errors.users && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.users}</span>}
+            <div className="text-xs text-gray-500">{getDynamicComment('users')}</div>
+          </div>
+          
+          {/* Débit voix */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+              Débit voix par utilisateur (kbps)
+              <InfoBulle content={pedagogicHelp.voice.why + ' ' + pedagogicHelp.voice.example} className="group-hover:underline group-hover:text-primary-dark" />
+            </label>
+            <input
+              type="number"
+              name="voice"
+              value={values.voice}
+              onChange={handleChange}
+              aria-invalid={!!errors.voice}
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.voice ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+              placeholder="Ex : 12.2"
+            />
+            {errors.voice && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.voice}</span>}
+            <div className="text-xs text-gray-500">{getDynamicComment('voice')}</div>
+          </div>
+          
+          {/* Débit data */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+              Débit data par utilisateur (kbps)
+              <InfoBulle content={pedagogicHelp.data.why + ' ' + pedagogicHelp.data.example} className="group-hover:underline group-hover:text-primary-dark" />
+            </label>
+            <input
+              type="number"
+              name="data"
+              value={values.data}
+              onChange={handleChange}
+              aria-invalid={!!errors.data}
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.data ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+              placeholder="Ex : 128"
+            />
+            {errors.data && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.data}</span>}
+            <div className="text-xs text-gray-500">{getDynamicComment('data')}</div>
+          </div>
+          
+          {/* Débit vidéo */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+              Débit vidéo par utilisateur (kbps)
+              <InfoBulle content={pedagogicHelp.video.why + ' ' + pedagogicHelp.video.example} className="group-hover:underline group-hover:text-primary-dark" />
+            </label>
+            <input
+              type="number"
+              name="video"
+              value={values.video}
+              onChange={handleChange}
+              aria-invalid={!!errors.video}
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.video ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+              placeholder="Ex : 256"
+            />
+            {errors.video && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.video}</span>}
+            <div className="text-xs text-gray-500">{getDynamicComment('video')}</div>
+          </div>
+          
+          {/* Facteur de charge */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+              Facteur de charge (%)
+              <InfoBulle content={pedagogicHelp.load.why + ' ' + pedagogicHelp.load.example} className="group-hover:underline group-hover:text-primary-dark" />
+            </label>
+            <input
+              type="number"
+              name="load"
+              value={values.load}
+              onChange={handleChange}
+              aria-invalid={!!errors.load}
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.load ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+              placeholder="Ex : 60"
+            />
+            {errors.load && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.load}</span>}
+            <div className="text-xs text-gray-500">{getDynamicComment('load')}</div>
+          </div>
         </div>
-        {/* Nombre d'utilisateurs */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
-            Nombre d'utilisateurs
-            <InfoBulle content={pedagogicHelp.users.why + ' ' + pedagogicHelp.users.example} className="group-hover:underline group-hover:text-primary-dark" />
-          </label>
-          <input
-            type="number"
-            name="users"
-            value={values.users}
-            onChange={handleChange}
-            aria-invalid={!!errors.users}
-            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.users ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            placeholder="Ex : 2000"
-          />
-          {errors.users && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.users}</span>}
-          <div className="text-xs text-gray-500">{getDynamicComment('users')}</div>
-        </div>
-        {/* Débit voix */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
-            Débit voix par utilisateur (kbps)
-            <InfoBulle content={pedagogicHelp.voice.why + ' ' + pedagogicHelp.voice.example} className="group-hover:underline group-hover:text-primary-dark" />
-          </label>
-          <input
-            type="number"
-            name="voice"
-            value={values.voice}
-            onChange={handleChange}
-            aria-invalid={!!errors.voice}
-            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.voice ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            placeholder="Ex : 12.2"
-          />
-          {errors.voice && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.voice}</span>}
-          <div className="text-xs text-gray-500">{getDynamicComment('voice')}</div>
-        </div>
-        {/* Débit data */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
-            Débit data par utilisateur (kbps)
-            <InfoBulle content={pedagogicHelp.data.why + ' ' + pedagogicHelp.data.example} className="group-hover:underline group-hover:text-primary-dark" />
-          </label>
-          <input
-            type="number"
-            name="data"
-            value={values.data}
-            onChange={handleChange}
-            aria-invalid={!!errors.data}
-            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.data ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            placeholder="Ex : 128"
-          />
-          {errors.data && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.data}</span>}
-          <div className="text-xs text-gray-500">{getDynamicComment('data')}</div>
-        </div>
-        {/* Débit vidéo */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
-            Débit vidéo par utilisateur (kbps)
-            <InfoBulle content={pedagogicHelp.video.why + ' ' + pedagogicHelp.video.example} className="group-hover:underline group-hover:text-primary-dark" />
-          </label>
-          <input
-            type="number"
-            name="video"
-            value={values.video}
-            onChange={handleChange}
-            aria-invalid={!!errors.video}
-            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.video ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            placeholder="Ex : 256"
-          />
-          {errors.video && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.video}</span>}
-          <div className="text-xs text-gray-500">{getDynamicComment('video')}</div>
-        </div>
-        {/* Facteur de charge */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
-            Facteur de charge (%)
-            <InfoBulle content={pedagogicHelp.load.why + ' ' + pedagogicHelp.load.example} className="group-hover:underline group-hover:text-primary-dark" />
-          </label>
-          <input
-            type="number"
-            name="load"
-            value={values.load}
-            onChange={handleChange}
-            aria-invalid={!!errors.load}
-            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.load ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-            placeholder="Ex : 60"
-          />
-          {errors.load && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.load}</span>}
-          <div className="text-xs text-gray-500">{getDynamicComment('load')}</div>
-        </div>
+        
         <button type="submit" className="w-full bg-primary text-white px-4 py-2 rounded-lg font-semibold text-lg mt-4 hover:bg-primary-dark transition-colors shadow focus:outline-none focus:ring-2 focus:ring-primary-light flex items-center gap-2">
           <span role="img" aria-label="Calculer">🧮</span> Calculer
         </button>

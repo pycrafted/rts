@@ -83,6 +83,34 @@ const scenarioPresets: { [key: string]: { values: HertzienFormValues; msg: strin
   montagne: {
     values: { frequency: '2', distance: '30', power: '25', gainTx: '25', gainRx: '25', losses: '3', threshold: '-95' },
     msg: "Scénario montagne : 30 km, 2 GHz, puissance 25 dBm, gains 25 dBi, pertes 3 dB, seuil -95 dBm. Longue distance, basse fréquence, conditions difficiles."
+  },
+  maritime: {
+    values: { frequency: '5', distance: '25', power: '22', gainTx: '22', gainRx: '22', losses: '4', threshold: '-92' },
+    msg: "Scénario maritime : 25 km, 5 GHz, puissance 22 dBm, gains 22 dBi, pertes 4 dB, seuil -92 dBm. Liaison côtière avec conditions maritimes."
+  },
+  desertique: {
+    values: { frequency: '6', distance: '40', power: '28', gainTx: '28', gainRx: '28', losses: '5', threshold: '-98' },
+    msg: "Scénario désertique : 40 km, 6 GHz, puissance 28 dBm, gains 28 dBi, pertes 5 dB, seuil -98 dBm. Très longue distance en environnement désertique."
+  },
+  campus: {
+    values: { frequency: '18', distance: '2', power: '10', gainTx: '15', gainRx: '15', losses: '1', threshold: '-80' },
+    msg: "Scénario campus : 2 km, 18 GHz, puissance 10 dBm, gains 15 dBi, pertes 1 dB, seuil -80 dBm. Liaison courte en environnement universitaire."
+  },
+  rural: {
+    values: { frequency: '3', distance: '20', power: '18', gainTx: '18', gainRx: '18', losses: '2', threshold: '-88' },
+    msg: "Scénario rural : 20 km, 3 GHz, puissance 18 dBm, gains 18 dBi, pertes 2 dB, seuil -88 dBm. Liaison rurale avec obstacles naturels."
+  },
+  industriel: {
+    values: { frequency: '11', distance: '8', power: '16', gainTx: '19', gainRx: '19', losses: '3', threshold: '-87' },
+    msg: "Scénario industriel : 8 km, 11 GHz, puissance 16 dBm, gains 19 dBi, pertes 3 dB, seuil -87 dBm. Environnement industriel avec interférences."
+  },
+  haute_capacite: {
+    values: { frequency: '23', distance: '3', power: '12', gainTx: '20', gainRx: '20', losses: '1', threshold: '-75' },
+    msg: "Scénario haute capacité : 3 km, 23 GHz, puissance 12 dBm, gains 20 dBi, pertes 1 dB, seuil -75 dBm. Liaison courte haute capacité."
+  },
+  backup: {
+    values: { frequency: '4', distance: '12', power: '19', gainTx: '17', gainRx: '17', losses: '2', threshold: '-89' },
+    msg: "Scénario backup : 12 km, 4 GHz, puissance 19 dBm, gains 17 dBi, pertes 2 dB, seuil -89 dBm. Liaison de secours robuste."
   }
 };
 
@@ -101,18 +129,12 @@ const HertzienForm: React.FC<{ onSubmit?: (values: HertzienFormValues) => void }
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<Partial<HertzienFormValues>>({});
   const [showResults, setShowResults] = useState(false);
-  const [showWhy, setShowWhy] = useState<{ [k: string]: boolean }>({});
   const [exampleMsg, setExampleMsg] = useState<string | null>(null);
   const [scenario, setScenario] = useState('');
   const [showGlossaire, setShowGlossaire] = useState(false);
-  const [glossaireFocus, setGlossaireFocus] = useState<string | undefined>(undefined);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
-  };
-
-  const handleShowWhy = (field: string) => {
-    setShowWhy((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   const getDynamicComment = (field: keyof HertzienFormValues) => {
@@ -191,14 +213,9 @@ const HertzienForm: React.FC<{ onSubmit?: (values: HertzienFormValues) => void }
     }
   };
 
-  const handleOpenGlossaire = (id: string) => {
-    setGlossaireFocus(id);
-    setShowGlossaire(true);
-  };
-
   return (
     <>
-      <Glossaire open={showGlossaire} onClose={() => setShowGlossaire(false)} focusId={glossaireFocus} termes={termesFH} />
+      <Glossaire open={showGlossaire} onClose={() => setShowGlossaire(false)} termes={termesFH} />
       <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 mt-8">
         <div className="flex justify-end mb-2">
           <button type="button" onClick={() => setShowGlossaire(true)} className="flex items-center gap-2 text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-light">
@@ -216,6 +233,13 @@ const HertzienForm: React.FC<{ onSubmit?: (values: HertzienFormValues) => void }
             <option value="urbain">Urbain</option>
             <option value="interurbain">Interurbain</option>
             <option value="montagne">Montagne</option>
+            <option value="maritime">Maritime</option>
+            <option value="desertique">Désertique</option>
+            <option value="campus">Campus</option>
+            <option value="rural">Rural</option>
+            <option value="industriel">Industriel</option>
+            <option value="haute_capacite">Haute Capacité</option>
+            <option value="backup">Backup</option>
           </select>
         </div>
         <button onClick={handleFillExample} className="mb-2 bg-success-light text-success-dark px-4 py-2 rounded-lg text-sm font-semibold hover:bg-success transition-colors w-full focus:outline-none focus:ring-2 focus:ring-success-light flex items-center gap-2">

@@ -37,7 +37,7 @@ export const NodeB3D: React.FC<NodeB3DProps> = ({
     mainAntenna: new THREE.BoxGeometry(1, 8, 1),
     secondaryAntenna: new THREE.BoxGeometry(0.5, 6, 0.5),
     indicator: new THREE.SphereGeometry(2, 6, 6), // Réduire la résolution
-    coverage: new THREE.SphereGeometry(1000, 12, 12) // Réduire la résolution
+    coverage: new THREE.SphereGeometry(4000, 24, 24) // Zone de couverture très élargie
   }), []);
 
   return (

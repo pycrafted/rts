@@ -187,27 +187,77 @@ const SimulationView: React.FC<SimulationViewProps> = ({ isActive }) => {
             </div>
           </div>
         )}
+
+        {/* Légende des marqueurs de distance */}
+        <div className="mt-4 p-4 bg-white rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-2">Marqueurs de distance</h3>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+              <span>25m</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+              <span>50m</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-pink-500 mr-2"></div>
+              <span>75m</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+              <span>100m</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Zone de visualisation 3D */}
       <div className="w-3/4 h-screen">
-        <Canvas camera={{ position: [0, 5, 10], fov: 75 }}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 5]} intensity={1} />
+        <Canvas camera={{ position: [0, 15, 25], fov: 60 }}>
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[20, 20, 10]} intensity={1.2} />
           
           <Grid
-            args={[100, 100]}
-            cellSize={1}
+            args={[200, 200]}
+            cellSize={2}
             cellThickness={0.5}
             cellColor="#6f6f6f"
-            sectionSize={5}
+            sectionSize={10}
             sectionThickness={1}
             sectionColor="#9d4b4b"
-            fadeDistance={50}
+            fadeDistance={100}
             fadeStrength={1}
             followCamera={false}
             infiniteGrid={true}
           />
+
+          {/* Marqueurs de distance pour la carte élargie */}
+          <group>
+            {/* Cercle de 25m */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+              <ringGeometry args={[25, 25.1, 32]} />
+              <meshStandardMaterial color="#3b82f6" transparent opacity={0.1} />
+            </mesh>
+            
+            {/* Cercle de 50m */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+              <ringGeometry args={[50, 50.1, 32]} />
+              <meshStandardMaterial color="#8b5cf6" transparent opacity={0.1} />
+            </mesh>
+            
+            {/* Cercle de 75m */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+              <ringGeometry args={[75, 75.1, 32]} />
+              <meshStandardMaterial color="#ec4899" transparent opacity={0.1} />
+            </mesh>
+            
+            {/* Cercle de 100m */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+              <ringGeometry args={[100, 100.1, 32]} />
+              <meshStandardMaterial color="#ef4444" transparent opacity={0.1} />
+            </mesh>
+          </group>
 
           <Terrain />
           
@@ -239,7 +289,15 @@ const SimulationView: React.FC<SimulationViewProps> = ({ isActive }) => {
             />
           ))}
 
-          <OrbitControls />
+          <OrbitControls 
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            maxDistance={100}
+            minDistance={5}
+            enableDamping={true}
+            dampingFactor={0.05}
+          />
         </Canvas>
       </div>
     </div>

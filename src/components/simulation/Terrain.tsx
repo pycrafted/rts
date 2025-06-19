@@ -7,7 +7,7 @@ interface TerrainProps {
 }
 
 export const Terrain: React.FC<TerrainProps> = ({
-  size = 100,
+  size = 200,
   color = '#4a7c59'
 }) => {
   return (
