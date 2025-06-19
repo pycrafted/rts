@@ -407,6 +407,80 @@ const Dashboard: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Historique Hertzien</CardTitle>
+            <CardDescription>Derniers calculs effectués</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {hertzienHistory.length > 0 ? (
+              <div className="space-y-3">
+                {hertzienHistory.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {item.affaiblissement?.toFixed(2)} dB
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-primary-600">
+                        {item.bilan?.toFixed(2)} dB
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Marge: {item.marge?.toFixed(2)} dB
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                Aucun calcul Hertzien récent
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Historique Optique</CardTitle>
+            <CardDescription>Derniers calculs effectués</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {optiqueHistory.length > 0 ? (
+              <div className="space-y-3">
+                {optiqueHistory.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {item.attFibre?.toFixed(2)} dB
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-primary-600">
+                        {item.bilan?.toFixed(2)} dBm
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Pertes: {item.pertesTotales?.toFixed(2)} dB
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                Aucun calcul Optique récent
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Lien vers l'Assistant IA */}
