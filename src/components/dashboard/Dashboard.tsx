@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,37 +15,28 @@ const stats = [
   { module: 'UMTS', sites: 6, marge: 12, bilan: 9 },
 ];
 
-const getGsmHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('gsm_history') || '[]');
-  } catch {
-    return [];
-  }
-};
+// Composant optimisé avec React.memo
+const DashboardCard = React.memo<{ title: string; children: React.ReactNode; className?: string }>(({ title, children, className }) => (
+  <Card className={className}>
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {children}
+    </CardContent>
+  </Card>
+));
 
-const getHertzienHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('hertzien_history') || '[]');
-  } catch {
-    return [];
-  }
-};
+DashboardCard.displayName = 'DashboardCard';
 
-const getOptiqueHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('optique_history') || '[]');
-  } catch {
-    return [];
-  }
-};
+// Composant optimisé pour les métriques
+const MetricCardOptimized = React.memo<{ title: string; value: string; icon: string; variant: 'default' | 'success' | 'warning' | 'error'; link: string }>(({ title, value, icon, variant, link }) => (
+  <Link to={link} className="block">
+    <MetricCard title={title} value={value} icon={icon} variant={variant} />
+  </Link>
+));
 
-const getUmtsHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('umts_history') || '[]');
-  } catch {
-    return [];
-  }
-};
+MetricCardOptimized.displayName = 'MetricCardOptimized';
 
 const Dashboard: React.FC = () => {
   const [gsmHistory, setGsmHistory] = React.useState<any[]>([]);
@@ -177,6 +168,46 @@ const Dashboard: React.FC = () => {
 
   const totalSites = stats.reduce((sum, stat) => sum + stat.sites, 0);
   const totalCalculs = gsmHistory.length + hertzienHistory.length + optiqueHistory.length + umtsHistory.length;
+
+  // Mémoriser les données des métriques
+  const metrics = useMemo(() => [
+    {
+      title: "Simulations GSM",
+      value: `${getGsmHistory().length}`,
+      icon: "📱",
+      variant: "default" as const,
+      link: "/gsm"
+    },
+    {
+      title: "Simulations UMTS",
+      value: `${getUmtsHistory().length}`,
+      icon: "📡",
+      variant: "success" as const,
+      link: "/umts"
+    },
+    {
+      title: "Liaisons Hertziennes",
+      value: `${getHertzienHistory().length}`,
+      icon: "🛰️",
+      variant: "warning" as const,
+      link: "/hertzien"
+    },
+    {
+      title: "Fibres Optiques",
+      value: `${getOptiqueHistory().length}`,
+      icon: "🔌",
+      variant: "error" as const,
+      link: "/optique"
+    }
+  ], []);
+
+  // Mémoriser les sections rapides
+  const quickActions = useMemo(() => [
+    { title: "Simulation Générale", description: "Liaisons hertziennes avec obstacles", link: "/simulation", icon: "🌐" },
+    { title: "Simulation GSM", description: "Couverture et dimensionnement", link: "/simulation/gsm", icon: "📱" },
+    { title: "Simulation UMTS", description: "Facteur de charge et QoS", link: "/simulation/umts", icon: "📡" },
+    { title: "Simulation Optique", description: "Bilan de liaison fibre", link: "/simulation/optique", icon: "🔌" }
+  ], []);
 
   return (
     <div className="space-y-6">
@@ -409,8 +440,91 @@ const Dashboard: React.FC = () => {
         onChange={importAllHistories}
         className="hidden"
       />
+
+      {/* Métriques */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {metrics.map((metric, index) => (
+          <MetricCardOptimized
+            key={index}
+            title={metric.title}
+            value={metric.value}
+            icon={metric.icon}
+            variant={metric.variant}
+            link={metric.link}
+          />
+        ))}
+      </div>
+
+      {/* Actions rapides */}
+      <DashboardCard title="Actions Rapides" className="mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {quickActions.map((action, index) => (
+            <Link
+              key={index}
+              to={action.link}
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">{action.icon}</span>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{action.title}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{action.description}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </DashboardCard>
+
+      {/* Documentation */}
+      <DashboardCard title="Documentation" className="mt-8">
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-gray-400">
+            Consultez la documentation complète pour maîtriser tous les aspects des télécommunications.
+          </p>
+          <Link
+            to="/documentation"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            📚 Voir la documentation
+          </Link>
+        </div>
+      </DashboardCard>
     </div>
   );
+};
+
+// Fonctions utilitaires mémorisées
+const getGsmHistory = () => {
+  try {
+    return JSON.parse(localStorage.getItem('gsm_history') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const getUmtsHistory = () => {
+  try {
+    return JSON.parse(localStorage.getItem('umts_history') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const getHertzienHistory = () => {
+  try {
+    return JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const getOptiqueHistory = () => {
+  try {
+    return JSON.parse(localStorage.getItem('optique_history') || '[]');
+  } catch {
+    return [];
+  }
 };
 
 export default Dashboard; 

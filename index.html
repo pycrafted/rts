@@ -5,12 +5,58 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RTS-Tutor - Simulation Télécoms</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="RTS-Tutor" />
+    <link rel="apple-touch-icon" href="/vite.svg" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    <link rel="preload" href="/src/index.css" as="style" />
+    
+    <!-- DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      console.log('CSS chargé :', getComputedStyle(document.body).fontFamily);
+      console.log('CSS chargé :', getComputedStyle(document.body).fontFamily);
+      
+      // Enregistrer le Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('Service Worker enregistré avec succès:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('Échec de l\'enregistrement du Service Worker:', error);
+            });
+        });
+      }
+      
+      // Optimisation du chargement
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          // Précharger les ressources non critiques
+          const preloadLinks = [
+            '/workers/calculations.js'
+          ];
+          
+          preloadLinks.forEach(href => {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = href;
+            document.head.appendChild(link);
+          });
+        });
+      }
     </script>
   </body>
 </html>
