@@ -5,6 +5,7 @@
  * - La structure générale de l'application avec le nouveau Layout
  * - Le routage entre les différentes pages
  * - L'intégration du design system moderne
+ * - L'assistant IA flottant global
  * 
  * @component
  */
@@ -22,6 +23,8 @@ import OptiqueSimulation from './pages/OptiqueSimulation';
 import HertzienSimulation from './pages/HertzienSimulation';
 import GSMCoverageDemo from './components/gsm/GSMCoverageDemo';
 import { UMTSSimulation } from './pages/UMTSSimulation';
+import FloatingAssistant from './components/ai/FloatingAssistant';
+import AssistantIAPage from './pages/AssistantIAPage';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +33,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/assistant-ia" element={<AssistantIAPage />} />
           <Route path="/gsm" element={<GSMPage />} />
           <Route path="/umts" element={<UMTSPage />} />
           <Route path="/hertzien" element={<HertzienForm />} />
@@ -41,6 +45,9 @@ const App: React.FC = () => {
           <Route path="/simulation/umts" element={<UMTSSimulation />} />
           <Route path="/documentation" element={<Documentation />} />
         </Routes>
+        
+        {/* Assistant IA flottant global */}
+        <FloatingAssistant />
       </Layout>
     </Router>
   );

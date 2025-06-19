@@ -14,6 +14,12 @@ const navigation = [
     description: 'Vue d\'ensemble'
   },
   {
+    name: 'Assistant IA',
+    href: '/assistant-ia',
+    icon: '🤖',
+    description: 'Expert télécoms'
+  },
+  {
     name: 'GSM',
     href: '/gsm',
     icon: '📱',

@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import MetricCard from '../data/MetricCard';
+import { Link } from 'react-router-dom';
 
 // Données fictives pour le dashboard
 const stats = [
@@ -373,6 +374,29 @@ const Dashboard: React.FC = () => {
                 Aucun calcul UMTS récent
               </p>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lien vers l'Assistant IA */}
+      <div className="mt-6">
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="text-4xl">🤖</div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Besoin d'aide technique ?</h3>
+                  <p className="text-gray-600">Consultez notre assistant IA spécialisé en télécommunications</p>
+                </div>
+              </div>
+              <Link to="/assistant-ia">
+                <Button variant="primary" size="lg" className="flex items-center gap-2">
+                  <span>💬</span>
+                  Ouvrir l'Assistant IA
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
