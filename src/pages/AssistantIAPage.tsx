@@ -1,48 +1,29 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import AssistantIA from '../components/ai/AssistantIA';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import { Link } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import type { AssistantIARef } from '../components/ai/AssistantIA';
 
 const AssistantIAPage: React.FC = () => {
+  const assistantRef = useRef<AssistantIARef>(null);
+
+  const handleCardClick = (question: string) => {
+    if (assistantRef.current) {
+      assistantRef.current.askQuestion(question);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link to="/dashboard">
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <span>←</span>
-                  Retour au Dashboard
-                </Button>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">🧠</span>
-              <h1 className="text-xl font-bold text-gray-900">Assistant IA Télécoms</h1>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Assistant IA Télécoms</h1>
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Assistant IA Principal */}
+          {/* Assistant IA */}
           <div className="lg:col-span-2">
-            <Card className="h-[600px] shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-primary-600 to-primary-700 text-white">
-                <CardTitle className="flex items-center gap-3">
-                  <span className="text-2xl">💬</span>
-                  Assistant IA Expert
-                </CardTitle>
-                <CardDescription className="text-primary-100">
-                  Posez vos questions sur les télécommunications et obtenez des réponses expertes
-                </CardDescription>
-              </CardHeader>
+            <Card className="h-full shadow-lg">
               <CardContent className="p-0 h-full">
                 <AssistantIA 
+                  ref={assistantRef}
                   title=""
                   placeholder="Posez votre question sur les réseaux télécoms..."
                   className="h-full border-0"
@@ -51,7 +32,7 @@ const AssistantIAPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Sidebar avec informations */}
+          {/* Panneau latéral */}
           <div className="space-y-6">
             {/* Guide d'utilisation */}
             <Card className="shadow-lg">
@@ -65,102 +46,31 @@ const AssistantIAPage: React.FC = () => {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900">Exemples de questions :</h4>
                   <div className="space-y-2 text-sm">
-                    <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <button 
+                      onClick={() => handleCardClick("Comment calculer le nombre de TRX ?")}
+                      className="w-full p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400 hover:bg-blue-100 transition-colors text-left"
+                    >
                       <strong>GSM :</strong> "Comment calculer le nombre de TRX ?"
-                    </div>
-                    <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                    </button>
+                    <button 
+                      onClick={() => handleCardClick("Comment dimensionner un NodeB ?")}
+                      className="w-full p-3 bg-green-50 rounded-lg border-l-4 border-green-400 hover:bg-green-100 transition-colors text-left"
+                    >
                       <strong>UMTS :</strong> "Comment dimensionner un NodeB ?"
-                    </div>
-                    <div className="p-3 bg-purple-50 rounded-lg border-l-4 border-purple-400">
+                    </button>
+                    <button 
+                      onClick={() => handleCardClick("Comment calculer les zones de Fresnel ?")}
+                      className="w-full p-3 bg-purple-50 rounded-lg border-l-4 border-purple-400 hover:bg-purple-100 transition-colors text-left"
+                    >
                       <strong>Hertzien :</strong> "Comment calculer les zones de Fresnel ?"
-                    </div>
-                    <div className="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
+                    </button>
+                    <button 
+                      onClick={() => handleCardClick("Comment calculer l'atténuation fibre ?")}
+                      className="w-full p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400 hover:bg-orange-100 transition-colors text-left"
+                    >
                       <strong>Optique :</strong> "Comment calculer l'atténuation fibre ?"
-                    </div>
+                    </button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Fonctionnalités */}
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="text-xl">⚡</span>
-                  Fonctionnalités
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-primary-600 rounded-full mt-2 flex-shrink-0"></div>
-                    <div>
-                      <strong>Expertise spécialisée</strong> en télécoms
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-primary-600 rounded-full mt-2 flex-shrink-0"></div>
-                    <div>
-                      <strong>Réponses techniques</strong> avec formules
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-primary-600 rounded-full mt-2 flex-shrink-0"></div>
-                    <div>
-                      <strong>Exemples concrets</strong> et calculs
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-primary-600 rounded-full mt-2 flex-shrink-0"></div>
-                    <div>
-                      <strong>Historique des conversations</strong>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Technologies supportées */}
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-lg">Technologies supportées</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="p-2 bg-blue-100 rounded text-center font-medium">
-                    📱 GSM
-                  </div>
-                  <div className="p-2 bg-green-100 rounded text-center font-medium">
-                    📡 UMTS
-                  </div>
-                  <div className="p-2 bg-purple-100 rounded text-center font-medium">
-                    🔌 Hertzien
-                  </div>
-                  <div className="p-2 bg-orange-100 rounded text-center font-medium">
-                    💡 Optique
-                  </div>
-                  <div className="p-2 bg-red-100 rounded text-center font-medium">
-                    🎮 Simulation
-                  </div>
-                  <div className="p-2 bg-indigo-100 rounded text-center font-medium">
-                    📊 Dimensionnement
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Statut */}
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-lg">Statut du service</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-gray-600">Assistant IA opérationnel</span>
-                </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Mode test activé - Réponses expertes simulées
                 </div>
               </CardContent>
             </Card>

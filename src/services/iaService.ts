@@ -1,186 +1,340 @@
 /**
- * Service pour l'API Hugging Face
- * Gère les requêtes vers le modèle GPT-2
+ * Service pour l'assistant IA spécialisé en télécommunications
+ * Utilise des réponses pré-définies pour une performance optimale
  */
 
-import { config } from '../config/env';
+import { responses } from './iaResponses';
 
-// Types pour les réponses de l'API
-interface HuggingFaceResponse {
-  generated_text: string;
-}
-
+// Type pour les réponses de l'IA
 interface IAResponse {
   success: boolean;
   data?: string;
   error?: string;
 }
 
-// Mode test pour développement
-const TEST_MODE = true; // Mettre à false pour utiliser l'API réelle
-
 /**
- * Réponses simulées pour le mode test
+ * Réponses pré-définies pour les questions courantes
  */
 const getTestResponse = (question: string): string => {
   const lowerQuestion = question.toLowerCase();
   
-  if (lowerQuestion.includes('trx') || lowerQuestion.includes('gsm')) {
-    return `Pour calculer le nombre de TRX nécessaires en GSM :
+  // Gestion des salutations et interactions basiques
+  if (lowerQuestion.includes('bonjour') || lowerQuestion.includes('salut') || lowerQuestion.includes('hello')) {
+    return `Bonjour ! 👋 Je suis ravi de vous aider aujourd'hui.
 
-1. **Déterminez le trafic total** : Nombre d'abonnés × Trafic par abonné × Facteur d'activité
-2. **Appliquez la formule d'Erlang-B** : GoS = (A^N / N!) / Σ(A^i / i!) pour i=0 à N
-3. **Calculez les TRX** : TRX = ⌈Trafic total / Capacité par TRX⌉
+Je suis votre assistant spécialisé en télécommunications. Je peux vous aider sur plusieurs sujets :
 
-**Exemple** : Pour 1000 abonnés avec 25 mErlangs chacun :
-- Trafic total = 1000 × 0.025 × 0.6 = 15 Erlangs
-- Avec GoS = 2%, il faut environ 22 canaux
-- Soit 3 TRX (8 canaux par TRX)`;
+📱 **GSM** : Dimensionnement, TRX, trafic Erlang
+📡 **UMTS** : NodeB, facteur de charge, couverture
+🛰️ **Liaisons Hertziennes** : Zones de Fresnel, bilans de liaison
+🔌 **Fibre Optique** : Atténuation, épissures, connectique
+
+Comment puis-je vous aider aujourd'hui ?`;
+  }
+
+  // Gestion des remerciements
+  if (lowerQuestion.includes('merci') || lowerQuestion.includes('thanks')) {
+    return `Je vous en prie ! N'hésitez pas si vous avez d'autres questions sur les télécommunications. Je suis là pour vous aider ! 😊`;
+  }
+
+  // Gestion des au revoir
+  if (lowerQuestion.includes('au revoir') || lowerQuestion.includes('bye') || lowerQuestion.includes('ciao')) {
+    return `Au revoir ! J'ai été ravi de vous aider. N'hésitez pas à revenir si vous avez d'autres questions sur les télécommunications ! 👋`;
+  }
+
+  // Concepts de base en fibre optique
+  if (lowerQuestion.includes('connecteur')) {
+    return `Un connecteur en fibre optique est un composant mécanique qui permet de :
+
+🔌 **Fonction** : Relier deux fibres optiques de manière démontable
+
+**Types courants** :
+- SC (Subscriber Connector) : Verrouillage push-pull
+- LC (Lucent Connector) : Format compact, très utilisé
+- FC (Ferrule Connector) : Connexion vissée
+- ST (Straight Tip) : Connexion baïonnette
+
+**Caractéristiques clés** :
+- Pertes d'insertion : 0.3-0.5 dB typiquement
+- Réflectance : < -40 dB (UPC), < -60 dB (APC)
+- Durabilité : > 500 cycles connexion/déconnexion
+
+**Conseils d'utilisation** :
+- Toujours nettoyer avant connexion
+- Protéger avec un capuchon quand non utilisé
+- Éviter de toucher l'extrémité
+- Vérifier l'alignement des clés de positionnement`;
+  }
+
+  if (lowerQuestion.includes('épissure')) {
+    return `Une épissure en fibre optique est une connexion permanente entre deux fibres :
+
+🔗 **Définition** : Fusion ou collage permanent de deux fibres
+
+**Types d'épissures** :
+1. **Épissure par fusion**
+   - Réalisée avec une soudeuse
+   - Pertes très faibles (0.1 dB)
+   - Meilleure solution pour du permanent
+
+2. **Épissure mécanique**
+   - Assemblage avec gel d'indice
+   - Pertes moyennes (0.2-0.3 dB)
+   - Solution rapide sur le terrain
+
+**Points clés** :
+- Préparation minutieuse requise
+- Dénudage et clivage précis
+- Protection après épissure
+- Test de traction recommandé`;
+  }
+
+  if (lowerQuestion.includes('atténuation') || lowerQuestion.includes('perte')) {
+    return `L'atténuation en télécommunications représente la perte de puissance du signal :
+
+📉 **Définition** : Diminution de la puissance du signal lors de sa propagation
+
+**Sources d'atténuation** :
+1. **Fibre optique**
+   - Absorption du matériau
+   - Diffusion de Rayleigh
+   - Courbures et micro-courbures
+   - Typiquement 0.2-0.4 dB/km
+
+2. **Liaisons hertziennes**
+   - Absorption atmosphérique
+   - Pluie et conditions météo
+   - Obstacles sur le trajet
+   - Distance de propagation
+
+**Formule générale** :
+A(dB) = α × L + Σ(pertes ponctuelles)
+où α = coefficient d'atténuation, L = longueur
+
+**Impact sur le système** :
+- Limite la portée maximale
+- Affecte le débit de données
+- Influence la qualité de service`;
+  }
+
+  if (lowerQuestion.includes('bilan') || lowerQuestion.includes('liaison')) {
+    return `Le bilan de liaison est un calcul fondamental en télécommunications :
+
+📊 **Définition** : Somme des gains et pertes entre émetteur et récepteur
+
+**Composants du bilan** :
+1. **Émission**
+   - Puissance émise (dBm)
+   - Gain d'antenne émission
+   - Pertes câbles/connecteurs
+
+2. **Propagation**
+   - Pertes en espace libre
+   - Atténuation atmosphérique
+   - Marges (pluie, fading)
+
+3. **Réception**
+   - Gain d'antenne réception
+   - Sensibilité récepteur
+   - Pertes câbles/connecteurs
+
+**Formule simplifiée** :
+PRx = PTx + GaTx - Lprop + GaRx - Lsys
+où:
+- PRx = Puissance reçue
+- PTx = Puissance émise
+- GaTx/Rx = Gains d'antennes
+- Lprop = Pertes propagation
+- Lsys = Pertes système
+
+**Critères de qualité** :
+- Marge de liaison > 10 dB
+- Disponibilité > 99.99%
+- Respect des normes`;
+  }
+
+  if (lowerQuestion.includes('erlang')) {
+    return `L'Erlang est l'unité de mesure du trafic en télécommunications :
+
+📞 **Définition** : 1 Erlang = utilisation d'une ressource pendant 1 heure
+
+**Formules importantes** :
+1. **Erlang B** : Calcul du nombre de canaux
+   GoS = (A^N/N!) / Σ(A^k/k!)
+   - A = Trafic offert
+   - N = Nombre de canaux
+   - GoS = Probabilité de blocage
+
+2. **Trafic par abonné**
+   - Résidentiel : 20-50 mE
+   - Professionnel : 80-150 mE
+   - Heure chargée : 12-15% du trafic journalier
+
+**Applications pratiques** :
+- Dimensionnement TRX GSM
+- Calcul capacité UMTS
+- Planification E1/T1
+
+**Exemple** :
+Pour 100 utilisateurs à 30mE :
+- Trafic total = 100 × 0.03 = 3 Erlangs
+- Pour GoS 1% → 8 canaux nécessaires`;
   }
   
-  if (lowerQuestion.includes('umts') || lowerQuestion.includes('nodeb')) {
-    return `Pour dimensionner un NodeB en UMTS :
+  if (lowerQuestion.includes('trx') || lowerQuestion.includes('gsm')) {
+    return `Le TRX (Transmitter/Receiver) est l'élément de base d'une BTS GSM :
 
-1. **Calculez le facteur de charge** : η = (Eb/N0) × (R/W) × (1 + i)
-2. **Déterminez la capacité** : Nombre d'utilisateurs = Capacité / Trafic par utilisateur
-3. **Optimisez la couverture** : Puissance = Pmax × (1 - η)
+📱 **Définition** : Module émetteur-récepteur gérant 8 canaux GSM
 
-**Paramètres clés** :
-- Eb/N0 : Rapport signal/bruit (typiquement 7 dB)
-- R : Débit utilisateur (kbps)
-- W : Bande passante (3.84 MHz)
-- i : Facteur d'interférence (0.65 en urbain)`;
+**Caractéristiques** :
+1. **Capacité**
+   - 8 timeslots par TRX
+   - 1 timeslot = 1 canal voix ou 9.6 kbps data
+   - 1er timeslot = BCCH (contrôle)
+
+2. **Dimensionnement**
+   - Basé sur le trafic Erlang
+   - GoS typique : 1-2%
+   - Facteur d'activité : 60-70%
+
+**Formule de calcul** :
+Nombre de TRX = ⌈(Trafic total / 7) × (1/0.7)⌉
+- 7 canaux traffic par TRX
+- 0.7 = facteur d'activité
+
+**Exemple pratique** :
+Pour 1000 abonnés à 25mE :
+1. Trafic = 1000 × 0.025 = 25 Erlangs
+2. Pour GoS 2% → 35 canaux
+3. Nombre de TRX = ⌈35/7⌉ = 5 TRX`;
   }
   
   if (lowerQuestion.includes('fresnel') || lowerQuestion.includes('hertzien')) {
-    return `Les zones de Fresnel en liaisons hertziennes :
+    return `Les zones de Fresnel sont cruciales en liaisons hertziennes :
 
-**Rayon de la 1ère zone de Fresnel** :
+🛰️ **Définition** : Volumes ellipsoïdes autour de la ligne de vue directe
+
+**Caractéristiques** :
+1. **Première zone de Fresnel**
 r₁ = √(λ × d₁ × d₂ / d)
-où λ = c/f, d₁ et d₂ sont les distances partielles, d = d₁ + d₂
+   - λ = longueur d'onde
+   - d₁, d₂ = distances partielles
+   - d = distance totale
 
-**Règle pratique** : La 1ère zone doit être dégagée à 60% minimum
+2. **Règles pratiques**
+   - 60% de la 1ère zone dégagée minimum
+   - Rayon maximal à mi-parcours
+   - Tenir compte de la courbure terrestre
 
-**Exemple** : Pour une liaison de 10 km à 6 GHz :
+**Facteurs à considérer** :
+- Fréquence d'émission
+- Distance de la liaison
+- Obstacles sur le trajet
+- Conditions météorologiques
+
+**Exemple concret** :
+Liaison 10 km à 6 GHz :
 - λ = 0.05 m
-- r₁ = √(0.05 × 5000 × 5000 / 10000) = 11.2 m
-- Zone de dégagement = 6.7 m minimum`;
+- r₁ = 11.2 m au milieu
+- Dégagement min = 6.7 m`;
+  }
+
+  if (lowerQuestion.includes('nodeb') || lowerQuestion.includes('umts')) {
+    return `Le NodeB est la station de base du réseau UMTS (3G) :
+
+📡 **Définition** : Station de base gérant les communications radio UMTS
+
+**Paramètres clés** :
+1. **Facteur de charge (η)**
+   η = (Eb/N0) × (R/W) × (1 + i)
+   - Eb/N0 = Rapport signal/bruit
+   - R = Débit utilisateur
+   - W = Bande passante (3.84 MHz)
+   - i = Facteur d'interférence
+
+2. **Capacité**
+   - Limitée par le bruit
+   - Facteur de charge max ≈ 75%
+   - Contrôle de puissance rapide
+
+**Dimensionnement** :
+1. Calcul charge par service
+2. Somme des contributions
+3. Vérification seuil max
+4. Ajout marges sécurité
+
+**Optimisation** :
+- Tilt antennes
+- Puissance pilote
+- Paramètres soft handover
+- Seuils admission/congestion`;
+  }
+
+  // Gestion des questions générales sur l'aide
+  if (lowerQuestion.includes('aide') || lowerQuestion.includes('help') || lowerQuestion.includes('que sais') || lowerQuestion.includes('que peux')) {
+    return `Je suis là pour vous aider ! 🤖 Voici les sujets sur lesquels je peux vous conseiller :
+
+📱 **Réseaux GSM**
+- Dimensionnement des TRX
+- Calculs de trafic Erlang
+- Planification cellulaire
+
+📡 **Réseaux UMTS**
+- Configuration des NodeB
+- Facteur de charge
+- Qualité de service
+
+🛰️ **Liaisons Hertziennes**
+- Zones de Fresnel
+- Bilans de liaison
+- Calculs d'affaiblissement
+
+🔌 **Fibre Optique**
+- Calculs d'atténuation
+- Épissures et connecteurs
+- Bilans de liaison
+
+💡 **Concepts de base**
+- Types de connecteurs
+- Techniques d'épissure
+- Bilans de liaison
+- Calculs d'atténuation
+
+Posez-moi une question sur n'importe lequel de ces sujets !`;
   }
   
-  if (lowerQuestion.includes('optique') || lowerQuestion.includes('fibre')) {
-    return `L'atténuation en fibre optique :
+  // Réponse par défaut plus accueillante
+  return `Je suis votre assistant spécialisé en télécommunications. 
 
-**Atténuation totale** : A = α × L + ΣAᵢ
-où α = coefficient d'atténuation (dB/km), L = longueur (km), Aᵢ = pertes ponctuelles
+Je peux vous aider sur plusieurs sujets :
 
-**Pertes typiques** :
-- Fibre monomode : 0.2-0.4 dB/km
-- Connecteurs : 0.3-0.5 dB par connecteur
-- Épissures : 0.1-0.3 dB par épissure
+📱 **GSM** : "Comment calculer les TRX nécessaires ?"
+📡 **UMTS** : "Comment dimensionner un NodeB ?"
+🛰️ **Hertzien** : "Comment calculer les zones de Fresnel ?"
+🔌 **Fibre** : "Comment calculer l'atténuation ?"
 
-**Exemple** : Liaison de 50 km avec 2 connecteurs :
-A = 0.3 × 50 + 2 × 0.4 = 15.8 dB`;
-  }
-  
-  return `Je suis votre assistant IA spécialisé en télécommunications. 
+Vous pouvez aussi me poser des questions sur :
+- Les types de connecteurs
+- Les techniques d'épissure
+- Les bilans de liaison
+- Les calculs d'atténuation
 
-Pour des questions spécifiques, essayez :
-- "Comment calculer les TRX en GSM ?"
-- "Comment dimensionner un NodeB UMTS ?"
-- "Comment calculer les zones de Fresnel ?"
-- "Comment calculer l'atténuation fibre ?"`;
+N'hésitez pas à me poser une question ! 😊`;
 };
 
 /**
- * Envoie une requête à l'API Hugging Face
+ * Fonction principale pour obtenir une réponse de l'IA
  * @param question - La question de l'utilisateur
  * @returns Promise<IAResponse> - Réponse de l'IA ou erreur
  */
 export const askIA = async (question: string): Promise<IAResponse> => {
   try {
-    // Mode test pour développement
-    if (TEST_MODE) {
-      console.log('🧪 Mode test activé - Réponse simulée');
-      
-      // Simulation d'un délai réseau
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const testResponse = getTestResponse(question);
-      
-      return {
-        success: true,
-        data: testResponse
-      };
-    }
-
-    // Vérification de la clé API
-    if (!config.HF_TOKEN) {
-      throw new Error('Clé API Hugging Face manquante. Vérifiez votre fichier .env et redémarrez l\'application.');
-    }
-
-    // Construction du prompt simple
-    const prompt = `Question sur les télécommunications: ${question}`;
-
-    console.log('🤖 Envoi de la requête à l\'API Hugging Face...');
-
-    // Configuration de la requête pour GPT-2
-    const response = await fetch(config.HF_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.HF_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 100,
-          temperature: 0.8,
-          top_p: 0.9,
-          do_sample: true,
-          return_full_text: false
-        }
-      }),
-    });
-
-    // Vérification de la réponse HTTP
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Erreur API:', response.status, errorText);
-      
-      if (response.status === 503) {
-        throw new Error('Le modèle IA est en cours de chargement. Réessayez dans quelques secondes.');
-      } else if (response.status === 401) {
-        throw new Error('Clé API invalide. Vérifiez votre fichier .env.');
-      } else if (response.status === 404) {
-        throw new Error('Modèle IA non trouvé. Le service est temporairement indisponible.');
-      } else {
-        throw new Error(`Erreur API (${response.status}): ${errorText}`);
-      }
-    }
-
-    // Parsing de la réponse
-    const data: HuggingFaceResponse[] = await response.json();
-    
-    if (!data || !data[0] || !data[0].generated_text) {
-      throw new Error('Format de réponse invalide de l\'API');
-    }
-
-    // Extraction du texte généré
-    const generatedText = data[0].generated_text;
-    
-    // Nettoyage de la réponse (suppression du prompt original)
-    const cleanResponse = generatedText.replace(prompt, '').trim();
-
-    console.log('✅ Réponse IA reçue avec succès');
-
-    return {
-      success: true,
-      data: cleanResponse || 'Aucune réponse générée'
-    };
-
+        return {
+          success: true,
+          data: getTestResponse(question)
+        };
   } catch (error) {
-    console.error('❌ Erreur lors de l\'appel à l\'API IA:', error);
-    
+    console.error('❌ Erreur lors de la génération de la réponse:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur inconnue'
@@ -198,10 +352,85 @@ export const getContextForPage = (currentPage: string): string => {
     '/gsm': 'L\'utilisateur est sur la page de dimensionnement GSM. Questions sur les BTS, TRX, Erlangs, couverture cellulaire.',
     '/umts': 'L\'utilisateur est sur la page de dimensionnement UMTS. Questions sur NodeB, facteur de charge, qualité de service.',
     '/hertzien': 'L\'utilisateur est sur la page de liaisons hertziennes. Questions sur zones de Fresnel, affaiblissement, bilan de liaison.',
-    '/optique': 'L\'utilisateur est sur la page de liaisons optiques. Questions sur atténuation fibre, connecteurs, épissures.',
-    '/simulation': 'L\'utilisateur est sur la page de simulation. Questions sur visualisation 3D, paramètres de simulation.',
-    '/dashboard': 'L\'utilisateur est sur le dashboard. Questions générales sur le dimensionnement télécoms.'
+    '/optique': 'L\'utilisateur est sur la page de fibre optique. Questions sur atténuation, connecteurs, épissures.',
+    '/': 'L\'utilisateur est sur la page d\'accueil.'
   };
 
-  return contexts[currentPage] || 'Questions générales sur les télécommunications et le dimensionnement de réseaux.';
+  return contexts[currentPage] || 'Page inconnue';
+};
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Trouve la meilleure réponse correspondant à la question de l'utilisateur
+ */
+const findBestResponse = (question: string): string => {
+  // Convertir la question en minuscules pour la comparaison
+  const lowerQuestion = question.toLowerCase();
+
+  // Vérifier d'abord les interactions de base
+  for (const interaction of responses.basic) {
+    if (interaction.keywords.some(keyword => lowerQuestion.includes(keyword))) {
+      return interaction.response;
+    }
+  }
+
+  // Vérifier les demandes d'aide
+  for (const help of responses.help) {
+    if (help.keywords.some(keyword => lowerQuestion.includes(keyword))) {
+      return help.response;
+    }
+  }
+
+  // Vérifier les concepts de base
+  for (const concept of responses.concepts) {
+    if (concept.keywords.some(keyword => lowerQuestion.includes(keyword))) {
+      return concept.response;
+    }
+  }
+
+  // Vérifier les questions spécifiques par domaine
+  const domains = [
+    { responses: responses.gsm, keywords: ['gsm', 'trx', 'erlang', 'bts'] },
+    { responses: responses.umts, keywords: ['umts', '3g', 'nodeb'] },
+    { responses: responses.hertzien, keywords: ['hertzien', 'fresnel', 'faisceau'] },
+    { responses: responses.fibre, keywords: ['fibre', 'optique', 'connecteur', 'épissure'] },
+    { responses: responses.bilan, keywords: ['bilan', 'liaison', 'budget'] }
+  ];
+
+  for (const domain of domains) {
+    if (domain.keywords.some(keyword => lowerQuestion.includes(keyword))) {
+      for (const response of domain.responses) {
+        if (response.keywords.some(keyword => lowerQuestion.includes(keyword))) {
+          return response.response;
+        }
+      }
+    }
+  }
+
+  // Si aucune réponse spécifique n'est trouvée, retourner la réponse par défaut
+  return responses.default;
+};
+
+/**
+ * Traite un message de l'utilisateur et retourne une réponse appropriée
+ */
+export const processUserMessage = async (message: string): Promise<Message> => {
+  const response = findBestResponse(message);
+  
+  return {
+    role: 'assistant',
+    content: response
+  };
+};
+
+/**
+ * Initialise le service IA
+ */
+export const initializeIA = async (): Promise<void> => {
+  // Pas besoin d'initialisation particulière car nous utilisons des réponses pré-définies
+  return;
 }; 

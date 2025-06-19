@@ -1,16 +1,8 @@
 /**
- * Configuration des variables d'environnement
- * 
- * Les variables sont chargées depuis le fichier .env à la racine du projet
+ * Configuration de l'application
  */
 
 export const config = {
-  // Clé API Hugging Face (depuis .env)
-  HF_TOKEN: import.meta.env.VITE_HF_TOKEN,
-  
-  // URL de l'API Hugging Face - Modèle simple et fiable
-  HF_API_URL: 'https://api-inference.huggingface.co/models/gpt2',
-  
   // Configuration de l'IA
   AI_CONFIG: {
     max_new_tokens: 100,
@@ -20,21 +12,7 @@ export const config = {
   }
 };
 
-// Vérification de la configuration
-export const validateConfig = () => {
-  if (!config.HF_TOKEN) {
-    console.error('❌ Clé API Hugging Face manquante !');
-    console.error('Vérifiez que votre fichier .env contient : VITE_HF_TOKEN=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');
-    return false;
-  }
-  
-  console.log('✅ Configuration IA chargée avec succès');
-  console.log('🔑 Token API :', config.HF_TOKEN.substring(0, 10) + '...');
-  console.log('🌐 URL API :', config.HF_API_URL);
-  return true;
+// Pas besoin de validation car nous utilisons des réponses pré-définies
+export const validateConfig = async (): Promise<boolean> => {
+    return true;
 };
-
-// Validation automatique au chargement
-if (typeof window !== 'undefined') {
-  validateConfig();
-} 
