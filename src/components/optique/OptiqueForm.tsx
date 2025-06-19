@@ -75,35 +75,63 @@ const scenarioPresets: { [key: string]: { values: OptiqueFormValues; msg: string
   campus: {
     values: { length: '2', attenuation: '0.3', splices: '2', connectors: '2', losses: '0.5', power: '0' },
     msg: "Scénario campus : 2 km, atténuation 0.3 dB/km, 2 épissures, 2 connecteurs, pertes 0.5 dB, puissance 0 dBm. Liaison courte et performante."
+  },
+  datacenter: {
+    values: { length: '0.5', attenuation: '0.25', splices: '0', connectors: '2', losses: '0.2', power: '-5' },
+    msg: "Scénario datacenter : 0.5 km, atténuation 0.25 dB/km, 0 épissure, 2 connecteurs, pertes 0.2 dB, puissance -5 dBm. Liaison très courte haute performance."
+  },
+  dorsale: {
+    values: { length: '80', attenuation: '0.45', splices: '30', connectors: '6', losses: '3', power: '8' },
+    msg: "Scénario dorsale : 80 km, atténuation 0.45 dB/km, 30 épissures, 6 connecteurs, pertes 3 dB, puissance 8 dBm. Liaison dorsale longue distance."
+  },
+  ftth: {
+    values: { length: '15', attenuation: '0.35', splices: '6', connectors: '3', losses: '1.5', power: '2' },
+    msg: "Scénario FTTH : 15 km, atténuation 0.35 dB/km, 6 épissures, 3 connecteurs, pertes 1.5 dB, puissance 2 dBm. Fibre jusqu'au domicile."
+  },
+  metro: {
+    values: { length: '25', attenuation: '0.38', splices: '10', connectors: '4', losses: '1.5', power: '3' },
+    msg: "Scénario métropolitain : 25 km, atténuation 0.38 dB/km, 10 épissures, 4 connecteurs, pertes 1.5 dB, puissance 3 dBm. Réseau métropolitain."
+  },
+  entreprise: {
+    values: { length: '5', attenuation: '0.32', splices: '3', connectors: '2', losses: '0.8', power: '1' },
+    msg: "Scénario entreprise : 5 km, atténuation 0.32 dB/km, 3 épissures, 2 connecteurs, pertes 0.8 dB, puissance 1 dBm. Liaison d'entreprise."
+  },
+  backup: {
+    values: { length: '30', attenuation: '0.4', splices: '12', connectors: '4', losses: '2', power: '6' },
+    msg: "Scénario backup : 30 km, atténuation 0.4 dB/km, 12 épissures, 4 connecteurs, pertes 2 dB, puissance 6 dBm. Liaison de secours robuste."
+  },
+  haute_capacite: {
+    values: { length: '40', attenuation: '0.3', splices: '15', connectors: '4', losses: '1.5', power: '4' },
+    msg: "Scénario haute capacité : 40 km, atténuation 0.3 dB/km, 15 épissures, 4 connecteurs, pertes 1.5 dB, puissance 4 dBm. Liaison haute performance."
   }
 };
 
 // Liste de termes pour le glossaire Optique
 const termesOptique = [
   { id: 'fibre', terme: 'Fibre optique', definition: "Support de transmission utilisant la lumière pour transporter l'information à très haut débit.", exemple: 'Une fibre optique relie deux centraux sur 50 km.' },
-  { id: 'attenuation', terme: 'Atténuation', definition: "Perte de puissance d'un signal lors de sa transmission.", unite: 'dB', exemple: "Une fibre de 10 km à 0.35 dB/km a 3.5 dB d'atténuation." },
+  { id: 'attenuation', terme: 'Atténuation', definition: "Perte de puissance d'un signal lors de sa transmission.", unite: 'dB/km', exemple: "Une fibre de 10 km à 0.35 dB/km a 3.5 dB d'atténuation." },
   { id: 'bande', terme: 'Bande passante', definition: "Intervalle de fréquences qu'un système peut transmettre sans atténuation excessive.", unite: 'Hz', exemple: "La bande passante d'une fibre peut dépasser 10 GHz." },
   { id: 'connecteur', terme: 'Connecteur', definition: "Dispositif permettant de raccorder deux fibres optiques.", exemple: 'Un connecteur SC ou LC.' },
   { id: 'epissure', terme: 'Épissure', definition: "Jonction permanente entre deux fibres optiques.", exemple: 'Une épissure par fusion.' },
-  // Ajoute d'autres termes Optique ici
+  { id: 'budget', terme: 'Budget optique', definition: "Différence entre la puissance d'émission et la sensibilité du récepteur.", unite: 'dB', exemple: 'Un budget de 20 dB permet de compenser les pertes.' },
+  { id: 'seuil', terme: 'Seuil de réception', definition: "Puissance minimale que le récepteur peut détecter.", unite: 'dBm', exemple: 'Un seuil de -30 dBm est courant.' },
+  { id: 'marge', terme: 'Marge de sécurité', definition: "Différence entre le bilan et le seuil de réception.", unite: 'dB', exemple: 'Une marge de 10 dB assure la fiabilité.' },
+  { id: 'dispersion', terme: 'Dispersion', definition: "Phénomène d'élargissement temporel du signal optique.", exemple: 'La dispersion chromatique limite la distance.' },
+  { id: 'ftth', terme: 'FTTH', definition: "Fiber To The Home - Fibre jusqu'au domicile.", exemple: 'Le FTTH apporte le très haut débit aux particuliers.' },
+  { id: 'dorsale', terme: 'Dorsale', definition: "Liaison principale de transport de données à longue distance.", exemple: 'Une dorsale relie plusieurs villes.' },
+  { id: 'metro', terme: 'Métropolitain', definition: "Réseau optique couvrant une zone métropolitaine.", exemple: 'Le réseau métropolitain dessert les entreprises.' }
 ];
 
 const OptiqueForm: React.FC<{ onSubmit?: (values: OptiqueFormValues) => void }> = ({ onSubmit }) => {
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<Partial<OptiqueFormValues>>({});
   const [showResults, setShowResults] = useState(false);
-  const [showWhy, setShowWhy] = useState<{ [k: string]: boolean }>({});
   const [exampleMsg, setExampleMsg] = useState<string | null>(null);
   const [scenario, setScenario] = useState('');
   const [showGlossaire, setShowGlossaire] = useState(false);
-  const [glossaireFocus, setGlossaireFocus] = useState<string | undefined>(undefined);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
-  };
-
-  const handleShowWhy = (field: string) => {
-    setShowWhy((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   const getDynamicComment = (field: keyof OptiqueFormValues) => {
@@ -181,14 +209,9 @@ const OptiqueForm: React.FC<{ onSubmit?: (values: OptiqueFormValues) => void }> 
     }
   };
 
-  const handleOpenGlossaire = (id: string) => {
-    setGlossaireFocus(id);
-    setShowGlossaire(true);
-  };
-
   return (
     <>
-      <Glossaire open={showGlossaire} onClose={() => setShowGlossaire(false)} focusId={glossaireFocus} termes={termesOptique} />
+      <Glossaire open={showGlossaire} onClose={() => setShowGlossaire(false)} termes={termesOptique} />
       <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 mt-8">
         <div className="flex justify-end mb-2">
           <button type="button" onClick={() => setShowGlossaire(true)} className="flex items-center gap-2 text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-light">
@@ -206,6 +229,13 @@ const OptiqueForm: React.FC<{ onSubmit?: (values: OptiqueFormValues) => void }> 
             <option value="urbaine">Fibre urbaine</option>
             <option value="longue">Longue distance</option>
             <option value="campus">Campus</option>
+            <option value="datacenter">Datacenter</option>
+            <option value="dorsale">Dorsale</option>
+            <option value="ftth">FTTH</option>
+            <option value="metro">Métropolitain</option>
+            <option value="entreprise">Entreprise</option>
+            <option value="backup">Backup</option>
+            <option value="haute_capacite">Haute Capacité</option>
           </select>
         </div>
         <button onClick={handleFillExample} className="mb-2 bg-success-light text-success-dark px-4 py-2 rounded-lg text-sm font-semibold hover:bg-success transition-colors w-full focus:outline-none focus:ring-2 focus:ring-success-light flex items-center gap-2">
