@@ -28,7 +28,7 @@ export const SimulationUMTS: React.FC = () => {
       updateResults();
       setIsLoading(false);
     } catch (error) {
-      console.error('Erreur lors du chargement de la simulation:', error);
+      // Gestion silencieuse de l'erreur pour la production
       setIsLoading(false);
     }
   }, [updateResults]);

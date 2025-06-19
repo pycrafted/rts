@@ -2,6 +2,9 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import Button from '../ui/Button';
+import MetricCard from '../data/MetricCard';
 
 // Données fictives pour le dashboard
 const stats = [
@@ -171,180 +174,217 @@ const Dashboard: React.FC = () => {
     doc.save('rapport_dimensionnement_telecoms.pdf');
   }
 
+  const totalSites = stats.reduce((sum, stat) => sum + stat.sites, 0);
+  const totalCalculs = gsmHistory.length + hertzienHistory.length + optiqueHistory.length + umtsHistory.length;
+
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6">Dashboard récapitulatif</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {stats.map((s) => (
-          <div key={s.module} className="bg-white rounded shadow p-5 flex flex-col items-center">
-            <h3 className="text-lg font-semibold mb-2">{s.module}</h3>
-            <div className="text-3xl font-bold text-blue-700 mb-1">{s.sites}</div>
-            <div className="text-gray-600">Sites/NodeB</div>
-            <div className="mt-2 text-sm text-gray-500">Marge : {s.marge} dB | Bilan : {s.bilan} dB</div>
-          </div>
-        ))}
-      </div>
-      <div className="bg-white rounded shadow p-5">
-        <h4 className="font-semibold mb-4">Comparatif du nombre de sites/NodeB par module</h4>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={stats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="module" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="sites" fill="#2563eb" name="Sites/NodeB" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      {/* Bloc unique pour tous les historiques */}
-      <div className="bg-white rounded-xl shadow p-6 mb-8 mt-10">
-        <h3 className="text-xl font-bold text-primary-dark mb-4">Historique des calculs</h3>
-        {/* GSM */}
-        <div className="mb-6">
-          <h4 className="text-lg font-semibold mb-2 text-blue-700">GSM</h4>
-          {gsmHistory.length === 0 ? (
-            <div className="text-gray-500">Aucun calcul GSM sauvegardé pour le moment.</div>
-          ) : (
-            <table className="min-w-full bg-white border rounded shadow text-sm mb-2">
-              <thead>
-                <tr>
-                  <th className="border px-2 py-1">Date</th>
-                  <th className="border px-2 py-1">Abonnés</th>
-                  <th className="border px-2 py-1">Sites</th>
-                  <th className="border px-2 py-1">TRX</th>
-                  <th className="border px-2 py-1">Trafic (Erlangs)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {gsmHistory.slice(0, 5).map((entry, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1">{new Date(entry.date).toLocaleString()}</td>
-                    <td className="border px-2 py-1">{entry.nbAbonnes.toLocaleString()}</td>
-                    <td className="border px-2 py-1">{entry.nbSites}</td>
-                    <td className="border px-2 py-1">{entry.nbTRX}</td>
-                    <td className="border px-2 py-1">{entry.traficTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-        <hr className="my-4 border-gray-200" />
-        {/* Hertzien */}
-        <div className="mb-6">
-          <h4 className="text-lg font-semibold mb-2 text-teal-700">Hertzien</h4>
-          {hertzienHistory.length === 0 ? (
-            <div className="text-gray-500">Aucun calcul hertzien sauvegardé pour le moment.</div>
-          ) : (
-            <table className="min-w-full bg-white border rounded shadow text-sm mb-2">
-              <thead>
-                <tr>
-                  <th className="border px-2 py-1">Date</th>
-                  <th className="border px-2 py-1">Affaiblissement (dB)</th>
-                  <th className="border px-2 py-1">Bilan (dB)</th>
-                  <th className="border px-2 py-1">Marge (dB)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hertzienHistory.slice(0, 5).map((entry, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1">{new Date(entry.date).toLocaleString()}</td>
-                    <td className="border px-2 py-1">{entry.affaiblissement.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td className="border px-2 py-1">{entry.bilan.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td className="border px-2 py-1">{entry.marge.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-        <hr className="my-4 border-gray-200" />
-        {/* Optique */}
-        <div className="mb-6">
-          <h4 className="text-lg font-semibold mb-2 text-purple-700">Optique</h4>
-          {optiqueHistory.length === 0 ? (
-            <div className="text-gray-500">Aucun calcul optique sauvegardé pour le moment.</div>
-          ) : (
-            <table className="min-w-full bg-white border rounded shadow text-sm mb-2">
-              <thead>
-                <tr>
-                  <th className="border px-2 py-1">Date</th>
-                  <th className="border px-2 py-1">Att. fibre (dB)</th>
-                  <th className="border px-2 py-1">Pertes totales (dB)</th>
-                  <th className="border px-2 py-1">Bilan (dBm)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {optiqueHistory.slice(0, 5).map((entry, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1">{new Date(entry.date).toLocaleString()}</td>
-                    <td className="border px-2 py-1">{entry.attFibre.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td className="border px-2 py-1">{entry.pertesTotales.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td className="border px-2 py-1">{entry.bilan.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-        <hr className="my-4 border-gray-200" />
-        {/* UMTS */}
+    <div className="space-y-6">
+      {/* En-tête du dashboard */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h4 className="text-lg font-semibold mb-2 text-orange-700">UMTS</h4>
-          {umtsHistory.length === 0 ? (
-            <div className="text-gray-500">Aucun calcul UMTS sauvegardé pour le moment.</div>
-          ) : (
-            <table className="min-w-full bg-white border rounded shadow text-sm mb-2">
-              <thead>
-                <tr>
-                  <th className="border px-2 py-1">Date</th>
-                  <th className="border px-2 py-1">Débit total (kbps)</th>
-                  <th className="border px-2 py-1">Cellules</th>
-                  <th className="border px-2 py-1">NodeB</th>
-                </tr>
-              </thead>
-              <tbody>
-                {umtsHistory.slice(0, 5).map((entry, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1">{new Date(entry.date).toLocaleString()}</td>
-                    <td className="border px-2 py-1">{entry.debitTotal.toLocaleString()}</td>
-                    <td className="border px-2 py-1">{entry.nbCellules}</td>
-                    <td className="border px-2 py-1">{entry.nbNodeB}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-2 text-gray-600">
+            Vue d'ensemble de vos dimensionnements télécoms
+          </p>
+        </div>
+        
+        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            icon="📊"
+            onClick={exportPDFReport}
+          >
+            Exporter PDF
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            icon="📁"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Importer
+          </Button>
+          
+          <Button
+            variant="primary"
+            size="sm"
+            icon="💾"
+            onClick={exportAllHistories}
+          >
+            Exporter tout
+          </Button>
         </div>
       </div>
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={exportAllHistories}
-          className="bg-primary text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-primary-dark transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
-        >
-          <span role="img" aria-label="Exporter JSON">📤</span> Exporter JSON
-        </button>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
-        >
-          <span role="img" aria-label="Importer JSON">📥</span> Importer JSON
-        </button>
-        <button
-          onClick={exportPDFReport}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-red-700 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-        >
-          <span role="img" aria-label="Exporter PDF">📄</span> Exporter rapport PDF
-        </button>
-        <input
-          type="file"
-          accept="application/json"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={importAllHistories}
+
+      {/* Métriques principales */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Total Sites/NodeB"
+          value={totalSites}
+          description="Sites déployés"
+          icon="📡"
+          variant="default"
+          trend={{ value: 12, isPositive: true }}
+        />
+        
+        <MetricCard
+          title="Calculs effectués"
+          value={totalCalculs}
+          description="Dimensionnements"
+          icon="🧮"
+          variant="success"
+        />
+        
+        <MetricCard
+          title="Moyenne marge"
+          value="13.8 dB"
+          description="Marge de sécurité"
+          icon="📊"
+          variant="warning"
+        />
+        
+        <MetricCard
+          title="Bilan moyen"
+          value="10.5 dB"
+          description="Bilan de liaison"
+          icon="⚖️"
+          variant="default"
         />
       </div>
+
+      {/* Graphique comparatif */}
+      <Card variant="elevated">
+        <CardHeader>
+          <CardTitle>Comparatif des modules</CardTitle>
+          <CardDescription>
+            Répartition des sites et NodeB par technologie
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis 
+                  dataKey="module" 
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  allowDecimals={false}
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                />
+                <Legend />
+                <Bar 
+                  dataKey="sites" 
+                  fill="#3b82f6" 
+                  radius={[4, 4, 0, 0]}
+                  name="Sites/NodeB"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Historique récent */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Historique GSM</CardTitle>
+            <CardDescription>Derniers calculs effectués</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {gsmHistory.length > 0 ? (
+              <div className="space-y-3">
+                {gsmHistory.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {item.nbAbonnes?.toLocaleString()} abonnés
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-primary-600">
+                        {item.nbSites} sites
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {item.nbTRX} TRX
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                Aucun calcul GSM récent
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Historique UMTS</CardTitle>
+            <CardDescription>Derniers calculs effectués</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {umtsHistory.length > 0 ? (
+              <div className="space-y-3">
+                {umtsHistory.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {item.debitTotal?.toLocaleString()} kbps
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-primary-600">
+                        {item.nbNodeB} NodeB
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {item.nbCellules} cellules
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                Aucun calcul UMTS récent
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Input file caché pour l'import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={importAllHistories}
+        className="hidden"
+      />
     </div>
   );
 };
