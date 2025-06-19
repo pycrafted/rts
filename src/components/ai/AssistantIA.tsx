@@ -155,7 +155,7 @@ N'hésitez pas à me poser vos questions ! Vous pouvez aussi cliquer sur les exe
                 className={`max-w-[80%] rounded-lg p-3 ${
                   message.role === 'user'
                     ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800'
+                    : 'bg-gray-100 dark:bg-gray-800 dark:text-white'
                 }`}
               >
                 <div 
@@ -171,10 +171,10 @@ N'hésitez pas à me poser vos questions ! Vous pouvez aussi cliquer sur les exe
           {/* Indicateur de chargement */}
           {isLoading && (
             <div className="flex justify-start gap-3">
-              <div className="bg-gray-100 rounded-lg p-3">
+              <div className="bg-gray-100 dark:bg-gray-800 dark:text-white rounded-lg p-3">
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
-                  <span className="text-sm text-gray-600">L'assistant réfléchit...</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">L'assistant réfléchit...</span>
                 </div>
               </div>
             </div>
