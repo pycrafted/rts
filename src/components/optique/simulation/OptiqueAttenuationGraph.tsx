@@ -92,41 +92,50 @@ const OptiqueAttenuationGraph: React.FC<OptiqueAttenuationGraphProps> = ({
       {
         label: 'Atténuation (dB)',
         data: data,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1,
+        borderColor: '#00ffff', // Cyan néon
+        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#00ffff',
+        pointBorderColor: '#ffffff',
+        pointHoverBackgroundColor: '#ffffff',
+        pointHoverBorderColor: '#00ffff',
       },
     ],
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        display: false,
       },
       title: {
         display: true,
-        text: 'Atténuation le long de la fibre',
+        text: "Évolution de l'atténuation le long de la fibre",
+        color: '#e2e8f0', // slate-200
+        font: {
+          size: 14,
+        },
       },
     },
     scales: {
       x: {
-        title: {
-          display: true,
-          text: 'Position (km)',
-        },
+        title: { display: true, text: 'Position (km)', color: '#94a3b8' }, // slate-400
+        ticks: { color: '#94a3b8' },
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
       },
       y: {
-        title: {
-          display: true,
-          text: 'Atténuation (dB)',
-        },
+        title: { display: true, text: 'Pertes (dB)', color: '#94a3b8' },
+        ticks: { color: '#94a3b8' },
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
       },
     },
   };
 
   return (
-    <div className="mt-6 p-4 bg-white rounded-lg shadow">
+    <div className="h-full w-full">
       <Line data={chartData} options={options} />
     </div>
   );

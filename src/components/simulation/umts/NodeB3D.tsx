@@ -16,10 +16,10 @@ export const NodeB3D: React.FC<NodeB3DProps> = ({
   
   // Couleur de l'antenne basée sur le facteur de charge - mémorisée
   const antennaColor = useMemo(() => {
-    if (loadFactor < 0.3) return '#10b981'; // Vert - excellent
-    if (loadFactor < 0.6) return '#f59e0b'; // Orange - bon
-    if (loadFactor < 0.8) return '#f97316'; // Orange foncé - moyen
-    return '#ef4444'; // Rouge - mauvais
+    if (loadFactor < 0.3) return '#39ff14'; // Vert citron vif
+    if (loadFactor < 0.6) return '#ffff00'; // Jaune vibrant
+    if (loadFactor < 0.8) return '#ff8c00'; // Orange vif
+    return '#ff2400'; // Rouge écarlate
   }, [loadFactor]);
   
   // Animation de l'antenne - optimisée
@@ -66,7 +66,7 @@ export const NodeB3D: React.FC<NodeB3DProps> = ({
         <meshStandardMaterial color={antennaColor} metalness={0.9} roughness={0.1} />
       </mesh>
       
-      <mesh position={[-3, 25, 0]}>
+      <mesh position={[3, 25, 0]}>
         <primitive object={geometries.secondaryAntenna} />
         <meshStandardMaterial color={antennaColor} metalness={0.9} roughness={0.1} />
       </mesh>
@@ -74,9 +74,9 @@ export const NodeB3D: React.FC<NodeB3DProps> = ({
       {/* Éclairage de l'antenne - intensité réduite */}
       <pointLight 
         position={[0, 30, 0]} 
-        intensity={0.3} 
+        intensity={0.6} 
         color={antennaColor}
-        distance={30} // Réduire la distance
+        distance={50} // Augmenter la distance
       />
       
       {/* Indicateur de puissance - géométrie mémorisée */}
@@ -85,9 +85,9 @@ export const NodeB3D: React.FC<NodeB3DProps> = ({
         <meshStandardMaterial 
           color={antennaColor} 
           transparent 
-          opacity={0.2} // Réduire l'opacité
+          opacity={0.4} // Augmenter l'opacité
           emissive={antennaColor}
-          emissiveIntensity={0.1} // Réduire l'intensité
+          emissiveIntensity={0.2} // Augmenter l'intensité
         />
       </mesh>
       
@@ -97,8 +97,41 @@ export const NodeB3D: React.FC<NodeB3DProps> = ({
         <meshStandardMaterial 
           color={antennaColor} 
           transparent 
-          opacity={0.03} // Réduire l'opacité
+          opacity={0.08} // Augmenter l'opacité
           side={THREE.BackSide}
+        />
+      </mesh>
+      
+      {/* Étiquette Node B pour plus de clarté */}
+      <group position={[0, 35, 0]}>
+        <mesh>
+          <boxGeometry args={[8, 2, 1]} />
+          <meshStandardMaterial color="#374151" />
+        </mesh>
+        {/* Texte 3D simplifié - utiliser des formes géométriques */}
+        <mesh position={[0, 0, 0.6]}>
+          <boxGeometry args={[0.5, 0.5, 0.1]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.1} />
+        </mesh>
+        <mesh position={[-1, 0, 0.6]}>
+          <boxGeometry args={[0.5, 0.5, 0.1]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.1} />
+        </mesh>
+        <mesh position={[1, 0, 0.6]}>
+          <boxGeometry args={[0.5, 0.5, 0.1]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.1} />
+        </mesh>
+      </group>
+      
+      {/* Effet de halo lumineux autour du Node B */}
+      <mesh position={[0, 0, 0]}>
+        <sphereGeometry args={[10, 16, 16]} />
+        <meshStandardMaterial 
+          color={antennaColor} 
+          transparent 
+          opacity={0.1}
+          emissive={antennaColor}
+          emissiveIntensity={0.05}
         />
       </mesh>
     </group>

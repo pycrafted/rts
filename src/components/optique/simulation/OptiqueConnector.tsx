@@ -12,10 +12,8 @@
  * @param {number} props.position - Position du connecteur (0-100%)
  * @param {number} props.fiberLength - Longueur de la fibre (en unités 3D)
  */
-import React, { useRef } from 'react';
-import { Cylinder } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import React from 'react';
+import { Box } from '@react-three/drei';
 
 interface OptiqueConnectorProps {
   position: number;
@@ -23,36 +21,33 @@ interface OptiqueConnectorProps {
 }
 
 const OptiqueConnector: React.FC<OptiqueConnectorProps> = ({ position, fiberLength }) => {
-  // Référence pour l'animation
-  const connectorRef = useRef<THREE.Mesh>(null);
-
-  // Calcul de la position sur l'axe X
   const xPosition = (position / 100) * fiberLength - fiberLength / 2;
-
-  // Animation de pulsation
-  useFrame(({ clock }) => {
-    if (connectorRef.current) {
-      const time = clock.getElapsedTime();
-      const material = connectorRef.current.material as THREE.MeshPhongMaterial;
-      material.opacity = 0.6 + Math.sin(time * 3) * 0.2;
-    }
-  });
+  const neonColor = '#ffff00'; // Jaune néon
 
   return (
-    <Cylinder
-      ref={connectorRef}
-      args={[0.2, 0.2, 0.4, 32]}
-      position={[xPosition, 0, 0]}
-      rotation={[Math.PI / 2, 0, 0]}
-    >
-      <meshPhongMaterial
-        color="#0000ff"
-        transparent
-        opacity={0.7}
-        emissive="#0000ff"
-        emissiveIntensity={0.4}
-      />
-    </Cylinder>
+    <group position={[xPosition, 0, 0]}>
+      {/* Boîtier du connecteur */}
+      <Box args={[0.5, 0.5, 0.5]}>
+        <meshStandardMaterial
+          color={neonColor}
+          emissive={neonColor}
+          emissiveIntensity={1.5}
+          toneMapped={false}
+          metalness={0.1}
+          roughness={0.2}
+        />
+      </Box>
+      {/* Indicateur lumineux */}
+      <Box args={[0.55, 0.55, 0.55]}>
+        <meshStandardMaterial
+          color={neonColor}
+          emissive={neonColor}
+          emissiveIntensity={1}
+          transparent
+          opacity={0.3}
+        />
+      </Box>
+    </group>
   );
 };
 

@@ -166,4 +166,160 @@ Pour toute question ou suggestion concernant le module de simulation UMTS :
 
 *Dernière mise à jour : Décembre 2024*
 
-*Version : 1.0.0* 
+*Version : 1.0.0*
+
+# 📡 Simulation UMTS - Guide d'utilisation
+
+## 🎯 Objectif du TP
+
+Cette simulation vous permet d'étudier le **facteur de charge** d'un réseau UMTS (Universal Mobile Telecommunications System) et de comprendre comment différents paramètres affectent la capacité et la qualité de service.
+
+## 🔗 Concepts clés
+
+### UMTS (Universal Mobile Telecommunications System)
+- Système de téléphonie mobile 3G
+- Utilise la technologie **WCDMA** (Wideband Code Division Multiple Access)
+- Permet à plusieurs utilisateurs de partager la même bande de fréquence
+
+### WCDMA (Wideband Code Division Multiple Access)
+- Technique d'accès multiple
+- Chaque utilisateur a un code unique
+- Plusieurs utilisateurs peuvent transmettre simultanément
+- La capacité est limitée par l'interférence entre utilisateurs
+
+### Facteur de charge
+- Mesure l'utilisation de la capacité du réseau (0% à 100%)
+- **< 30%** : Excellent - réseau sous-utilisé
+- **30-60%** : Bon - utilisation normale
+- **60-80%** : Moyen - attention requise
+- **> 80%** : Critique - congestion probable
+
+## 🎮 Comment utiliser la simulation
+
+### 1. Navigation 3D
+- **Souris** : Faire tourner la caméra
+- **Molette** : Zoom avant/arrière
+- **Clic droit + glisser** : Déplacer la vue
+
+### 2. Éléments visuels
+- **📡 Node B** : Station de base (centre de la scène)
+- **🔵 Utilisateurs mobiles** : Sphères colorées selon la QoS
+- **🎯 Cercles colorés** : Marqueurs de distance (500m à 4000m)
+- **🔴 Zones d'interférence** : Sphères rouges (optionnel)
+- **🔵 Handovers** : Cylindres bleus (optionnel)
+
+### 3. Paramètres à ajuster
+
+#### 👥 Nombre d'utilisateurs (1-200)
+- **Impact** : Plus d'utilisateurs = facteur de charge plus élevé
+- **Conseil** : Commencez avec 30-50 utilisateurs
+
+#### 📶 Débit par utilisateur (64-1024 kbps)
+- **Impact** : Débit plus élevé = charge réseau plus importante
+- **Types** :
+  - 64 kbps : Voix basique
+  - 128-256 kbps : Données web
+  - 384-512 kbps : Vidéo streaming
+  - 1024 kbps : Vidéo HD
+
+#### ⚡ Facteur d'activité (10%-100%)
+- **Impact** : Pourcentage de temps où l'utilisateur transmet
+- **Exemples** :
+  - 10-30% : Navigation web
+  - 40-60% : Streaming audio
+  - 70-90% : Streaming vidéo
+  - 100% : Téléchargement continu
+
+#### 🎯 Type de service
+- **📞 Voix** : 12.2 kbps (téléphonie)
+- **📱 Données** : 64-384 kbps (web, email)
+- **🎥 Vidéo** : 128-512 kbps (streaming)
+
+#### 📡 Puissance Node B (30-50 dBm)
+- **Impact** : Puissance d'émission de la station de base
+- **Typique** : 43-47 dBm
+
+## 🎯 Scénarios prédéfinis
+
+### Scénarios de base
+1. **📞 Voix - Configuration de base** : 30 utilisateurs, charge modérée
+2. **📞 Voix - Réseau saturé** : 150 utilisateurs, heures de pointe
+3. **📱 Données - Charge modérée** : Navigation web typique
+4. **📱 Données - Charge élevée** : Utilisation intensive
+
+### Scénarios avancés
+5. **🎥 Vidéo - Streaming** : Vidéo qualité standard
+6. **🎥 Vidéo - HD/4K** : Vidéo haute définition
+7. **🔄 Services mixtes** : Mélange réaliste
+8. **🎓 Campus universitaire** : Forte densité d'utilisateurs
+9. **🏢 Quartier d'affaires** : Trafic professionnel
+10. **🌾 Zone rurale** : Faible densité, couverture étendue
+
+## 📊 Interprétation des résultats
+
+### Facteur de charge
+- **🟢 < 30%** : Le réseau peut accepter plus d'utilisateurs
+- **🟡 30-60%** : Utilisation normale, bonne QoS
+- **🟠 60-80%** : Attention, QoS peut se dégrader
+- **🔴 > 80%** : Congestion probable, ajouter des Node Bs
+
+### Qualité de service (QoS)
+- **🟢 Excellent** : Expérience utilisateur optimale
+- **🟡 Bon** : Performance acceptable
+- **🟠 Moyen** : Dégradation perceptible
+- **🔴 Pauvre** : Service inutilisable
+
+### Node Bs requis
+- Indique le nombre de stations de base nécessaires
+- Augmente avec le facteur de charge
+- Considérer la couverture géographique
+
+## 💡 Conseils pour le TP
+
+### Démarrage
+1. Commencez par un scénario simple (voix basique)
+2. Observez le facteur de charge initial
+3. Augmentez progressivement le nombre d'utilisateurs
+4. Notez quand la QoS se dégrade
+
+### Expérimentation
+1. **Testez différents services** : Comparez voix, données, vidéo
+2. **Varyez le facteur d'activité** : Observez l'impact sur la charge
+3. **Explorez les scénarios** : Utilisez les configurations prédéfinies
+4. **Activez les options visuelles** : Interférences et handovers
+
+### Analyse
+1. **Identifiez les seuils** : Quand le facteur de charge devient critique
+2. **Calculez la capacité** : Nombre max d'utilisateurs pour une QoS donnée
+3. **Planifiez l'extension** : Combien de Node Bs pour supporter plus d'utilisateurs
+4. **Comparez les services** : Quel service consomme le plus de ressources
+
+## 🔧 Options d'affichage
+
+### Zones d'interférence
+- Affiche les zones où les signaux interfèrent
+- Rouge : Interférence élevée
+- Utile pour comprendre la limitation de capacité
+
+### Handovers
+- Montre les transferts entre cellules
+- Bleu : Connexions de handover
+- Important pour la continuité de service
+
+## 📚 Pour aller plus loin
+
+### Concepts avancés
+- **Soft handover** : Connexion simultanée à plusieurs Node Bs
+- **Power control** : Ajustement automatique de la puissance
+- **Spreading factor** : Facteur d'étalement du code WCDMA
+- **Ec/Io** : Rapport signal/interférence
+
+### Optimisations
+- **Dimensionnement** : Calculer le nombre optimal de Node Bs
+- **Fréquences** : Planification des canaux
+- **Antennes** : Orientation et gain
+- **Trafic** : Modélisation des pics d'utilisation
+
+---
+
+**🎓 Bon travail !** Cette simulation vous aide à comprendre les principes fondamentaux de la planification de réseaux UMTS. 

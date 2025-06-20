@@ -55,22 +55,22 @@ export const AutoOptimizer: React.FC<AutoOptimizerProps> = ({
   }, [currentFps, targetFps, isOptimizing, numberOfUsers, setNumberOfUsers, setShowInterference, setShowHandovers]);
 
   const getOptimizationStatus = () => {
-    if (currentFps >= targetFps) return { color: 'text-green-600', status: 'Optimal' };
-    if (optimizationLevel === 'high') return { color: 'text-red-600', status: 'Optimisation maximale' };
-    if (optimizationLevel === 'medium') return { color: 'text-yellow-600', status: 'Optimisation modérée' };
-    return { color: 'text-blue-600', status: 'Optimisation légère' };
+    if (currentFps >= targetFps) return { color: 'text-lime-400', status: 'Optimal' };
+    if (optimizationLevel === 'high') return { color: 'text-red-500', status: 'Optimisation maximale' };
+    if (optimizationLevel === 'medium') return { color: 'text-yellow-300', status: 'Optimisation modérée' };
+    return { color: 'text-blue-400', status: 'Optimisation légère' };
   };
 
   const optimizationStatus = getOptimizationStatus();
 
   return (
-    <div className="absolute bottom-4 right-4 bg-white bg-opacity-95 rounded-lg p-4 shadow-lg min-w-[280px]">
-      <h4 className="text-sm font-semibold text-gray-800 mb-3">⚡ Auto-Optimizer</h4>
+    <div className="absolute bottom-4 right-4 bg-slate-800 bg-opacity-90 rounded-lg p-4 shadow-lg min-w-[280px] border border-slate-700 opacity-20 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300">
+      <h4 className="text-sm font-semibold text-white mb-3">⚡ Auto-Optimizer</h4>
       
       <div className="space-y-2 text-xs">
         {/* Status d'optimisation */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">Status:</span>
+          <span className="text-slate-300">Status:</span>
           <span className={`font-semibold ${optimizationStatus.color}`}>
             {optimizationStatus.status}
           </span>
@@ -78,9 +78,9 @@ export const AutoOptimizer: React.FC<AutoOptimizerProps> = ({
         
         {/* FPS actuels */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">FPS actuels:</span>
+          <span className="text-slate-300">FPS actuels:</span>
           <span className={`font-mono font-bold ${
-            currentFps >= targetFps ? 'text-green-600' : 'text-red-600'
+            currentFps >= targetFps ? 'text-lime-400' : 'text-red-500'
           }`}>
             {currentFps}
           </span>
@@ -88,27 +88,27 @@ export const AutoOptimizer: React.FC<AutoOptimizerProps> = ({
         
         {/* FPS cible */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">FPS cible:</span>
-          <span className="font-mono">{targetFps}</span>
+          <span className="text-slate-300">FPS cible:</span>
+          <span className="font-mono text-slate-300">{targetFps}</span>
         </div>
         
         {/* Niveau d'optimisation */}
         <div className="flex justify-between items-center">
-          <span className="text-gray-600">Niveau:</span>
-          <span className="font-semibold capitalize">{optimizationLevel}</span>
+          <span className="text-slate-300">Niveau:</span>
+          <span className="font-semibold capitalize text-slate-300">{optimizationLevel}</span>
         </div>
       </div>
       
       {/* Barre de performance */}
       <div className="mt-3">
-        <div className="flex justify-between text-xs text-gray-600 mb-1">
+        <div className="flex justify-between text-xs text-slate-300 mb-1">
           <span>Performance</span>
           <span>{currentFps}/{targetFps} FPS</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-slate-600 rounded-full h-2">
           <div 
             className={`h-2 rounded-full transition-all duration-300 ${
-              currentFps >= targetFps ? 'bg-green-500' : 'bg-red-500'
+              currentFps >= targetFps ? 'bg-lime-500' : 'bg-red-500'
             }`}
             style={{ width: `${Math.min((currentFps / targetFps) * 100, 100)}%` }}
           />
@@ -117,9 +117,9 @@ export const AutoOptimizer: React.FC<AutoOptimizerProps> = ({
       
       {/* Optimisations appliquées */}
       {currentFps < targetFps && (
-        <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-          <p className="text-blue-800 font-semibold mb-1">🔧 Optimisations appliquées:</p>
-          <ul className="text-blue-700 space-y-1">
+        <div className="mt-3 p-2 bg-blue-900 bg-opacity-30 border border-blue-700 rounded text-xs">
+          <p className="text-blue-200 font-semibold mb-1">🔧 Optimisations appliquées:</p>
+          <ul className="text-blue-100 space-y-1">
             {optimizationLevel === 'high' && (
               <>
                 <li>• Interférences désactivées</li>
@@ -142,9 +142,9 @@ export const AutoOptimizer: React.FC<AutoOptimizerProps> = ({
       
       {/* Indicateur d'optimisation en cours */}
       {isOptimizing && (
-        <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-          <div className="flex items-center text-yellow-800">
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+        <div className="mt-3 p-2 bg-yellow-900 bg-opacity-30 border border-yellow-700 rounded text-xs">
+          <div className="flex items-center text-yellow-200">
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400 mr-2"></div>
             <span>Optimisation en cours...</span>
           </div>
         </div>

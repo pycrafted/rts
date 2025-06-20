@@ -134,7 +134,7 @@ export const ScenarioDropdown: React.FC = () => {
 
   return (
     <div className="mb-6">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-slate-200 mb-2">
         🎯 Scénarios prédéfinis
       </label>
       <select
@@ -144,7 +144,7 @@ export const ScenarioDropdown: React.FC = () => {
             loadScenario(scenario);
           }
         }}
-        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-full p-2 border border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-700 text-white"
         defaultValue=""
       >
         <option value="" disabled>
@@ -158,8 +158,8 @@ export const ScenarioDropdown: React.FC = () => {
       </select>
       
       {/* Description du scénario sélectionné */}
-      <div className="mt-2 p-3 bg-blue-50 rounded-md">
-        <p className="text-xs text-blue-800">
+      <div className="mt-2 p-3 bg-slate-800 rounded-md border border-slate-700">
+        <p className="text-xs text-slate-300">
           <strong>💡 Conseil pédagogique:</strong> Commencez par un scénario simple 
           puis explorez des configurations plus complexes pour comprendre l'impact 
           des différents paramètres sur le facteur de charge.

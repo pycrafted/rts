@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import InfoBulle from '@/components/common/InfoBulle';
 
 interface MaintenanceScenario {
   id: string;
@@ -64,89 +65,53 @@ const maintenanceScenarios: MaintenanceScenario[] = [
 
 interface OptiqueMaintenanceProps {
   onScenarioSelect: (scenario: MaintenanceScenario) => void;
-  onDefectAdd: (defect: { type: 'bend' | 'break' | 'dirty' | 'wet'; position: number; severity: number }) => void;
 }
 
-const OptiqueMaintenance: React.FC<OptiqueMaintenanceProps> = ({
-  onScenarioSelect,
-  onDefectAdd
-}) => {
-  const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
-  const [showTutorial, setShowTutorial] = useState(false);
+const OptiqueMaintenance: React.FC<OptiqueMaintenanceProps> = ({ onScenarioSelect }) => {
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
 
-  const handleScenarioSelect = (scenarioId: string) => {
-    setSelectedScenario(scenarioId);
-    const scenario = maintenanceScenarios.find(s => s.id === scenarioId);
-    if (scenario) {
-      onScenarioSelect(scenario);
-      // Ajouter les défauts du scénario
-      scenario.defects.forEach(defect => onDefectAdd(defect));
-    }
+  const handleScenarioSelect = (scenario: MaintenanceScenario) => {
+    setSelectedScenarioId(scenario.id);
+    onScenarioSelect(scenario);
   };
 
+  const selectedScenario = maintenanceScenarios.find(s => s.id === selectedScenarioId);
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Scénarios de Maintenance</h3>
-        <button
-          onClick={() => setShowTutorial(!showTutorial)}
-          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          {showTutorial ? 'Masquer Tutoriel' : 'Afficher Tutoriel'}
-        </button>
+    <div className="space-y-4 text-sm">
+      <div>
+        <label className="flex items-center font-medium text-slate-300 mb-2">
+          Scénarios Pédagogiques
+          <InfoBulle content="Simulez des pannes communes pour apprendre à les diagnostiquer." />
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {maintenanceScenarios.map((scenario) => (
+            <button
+              key={scenario.id}
+              onClick={() => handleScenarioSelect(scenario)}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                selectedScenarioId === scenario.id
+                  ? 'bg-cyan-500 text-white'
+                  : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+              }`}
+            >
+              {scenario.title}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {showTutorial && (
-        <div className="p-4 bg-blue-50 rounded-lg mb-4">
-          <h4 className="font-medium text-blue-800 mb-2">Comment utiliser les scénarios</h4>
-          <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700">
-            <li>Sélectionnez un scénario dans la liste</li>
-            <li>Suivez les étapes dans l'ordre indiqué</li>
-            <li>Utilisez les outils de mesure pour diagnostiquer</li>
-            <li>Appliquez les corrections nécessaires</li>
-            <li>Vérifiez les résultats dans le bilan de liaison</li>
+      {selectedScenario && (
+        <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+          <p className="text-slate-300 text-xs italic mb-2">{selectedScenario.description}</p>
+          <h5 className="text-sm font-semibold text-cyan-400 mb-2">Étapes à suivre :</h5>
+          <ol className="list-decimal list-inside space-y-1 text-slate-300 text-xs">
+            {selectedScenario.steps.map((step, index) => (
+              <li key={index}>{step}</li>
+            ))}
           </ol>
         </div>
       )}
-
-      <div className="space-y-4">
-        {maintenanceScenarios.map((scenario) => (
-          <div
-            key={scenario.id}
-            className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-              selectedScenario === scenario.id
-                ? 'bg-blue-50 border-blue-500'
-                : 'bg-white border-gray-200 hover:border-blue-300'
-            }`}
-            onClick={() => handleScenarioSelect(scenario.id)}
-          >
-            <h4 className="font-medium text-gray-900">{scenario.title}</h4>
-            <p className="text-sm text-gray-600 mt-1">{scenario.description}</p>
-            
-            {selectedScenario === scenario.id && (
-              <div className="mt-3">
-                <h5 className="text-sm font-medium text-gray-700 mb-2">Étapes :</h5>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
-                  {scenario.steps.map((step, index) => (
-                    <li key={index}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 p-4 bg-green-50 rounded-lg">
-        <h4 className="font-medium text-green-800 mb-2">Conseils de Maintenance</h4>
-        <ul className="list-disc list-inside space-y-2 text-sm text-green-700">
-          <li>Toujours nettoyer les connecteurs avant les mesures</li>
-          <li>Vérifier les courbures de la fibre (rayon minimum)</li>
-          <li>Documenter toutes les interventions</li>
-          <li>Utiliser des outils de mesure calibrés</li>
-          <li>Respecter les procédures de sécurité</li>
-        </ul>
-      </div>
     </div>
   );
 };

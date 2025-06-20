@@ -12,9 +12,14 @@ import OptiqueSimulationView from '@/components/optique/simulation/OptiqueSimula
 
 const OptiqueSimulation: React.FC = () => {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-blue-800">Simulation Optique</h1>
-      <OptiqueSimulationView />
+    <div className="p-4 sm:p-6 bg-slate-900 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-2 text-cyan-300">Laboratoire de Fibre Optique</h1>
+        <p className="text-slate-400 mb-6">
+          Une simulation interactive pour visualiser l'impact des paramètres physiques sur un bilan de liaison optique.
+        </p>
+        <OptiqueSimulationView />
+      </div>
     </div>
   );
 };

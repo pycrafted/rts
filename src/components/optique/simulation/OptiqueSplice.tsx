@@ -22,28 +22,30 @@ interface OptiqueSpliceProps {
 const OptiqueSplice: React.FC<OptiqueSpliceProps> = ({ position, fiberLength }) => {
   // Calcul de la position sur l'axe X
   const xPosition = (position / 100) * fiberLength - fiberLength / 2;
+  const neonColor = '#ff00ff'; // Magenta néon
 
   return (
     <group position={[xPosition, 0, 0]}>
-      {/* Boîtier d'épissure */}
-      <Cylinder
-        args={[0.15, 0.15, 0.3, 32]}
-        rotation={[Math.PI / 2, 0, 0]}
-      >
-        <meshPhongMaterial
-          color="#ff0000"
+      {/* Cylindre principal de l'épissure */}
+      <Cylinder args={[0.25, 0.25, 0.4, 16]}>
+        <meshStandardMaterial
+          color={neonColor}
+          emissive={neonColor}
+          emissiveIntensity={2}
+          toneMapped={false}
           transparent
           opacity={0.8}
-          emissive="#ff0000"
-          emissiveIntensity={0.3}
         />
       </Cylinder>
-
-      {/* Indicateur de perte */}
-      <mesh position={[0, 0.2, 0]}>
-        <boxGeometry args={[0.1, 0.1, 0.1]} />
-        <meshBasicMaterial color="#ff0000" />
-      </mesh>
+      {/* Anneau lumineux central */}
+      <Cylinder args={[0.26, 0.26, 0.2, 16]}>
+        <meshStandardMaterial
+          color="#ffffff"
+          emissive="#ffffff"
+          emissiveIntensity={3}
+          toneMapped={false}
+        />
+      </Cylinder>
     </group>
   );
 };
