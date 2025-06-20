@@ -30,13 +30,31 @@ const AssistantIA = forwardRef<AssistantIARef, AssistantIAProps>(({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isConfigValid, setIsConfigValid] = useState<boolean | null>(null);
+  const [thinkingMessage, setThinkingMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Messages de réflexion variés pour simuler une IA qui réfléchit
+  const thinkingMessages = [
+    "🤔 Je réfléchis à ta question...",
+    "💭 Laisse-moi analyser ça...",
+    "🧠 Je consulte mes connaissances...",
+    "📚 Je cherche la meilleure explication...",
+    "🔍 Je fouille dans mes données...",
+    "💡 Je prépare une réponse détaillée...",
+    "⚡ Je traite l'information...",
+    "🎯 Je trouve la réponse parfaite..."
+  ];
+
+  const getRandomThinkingMessage = () => {
+    return thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+  };
 
   useImperativeHandle(ref, () => ({
     askQuestion: async (question: string) => {
       setInput('');
       setMessages(prev => [...prev, { role: 'user', content: question }]);
       setIsLoading(true);
+      setThinkingMessage(getRandomThinkingMessage());
 
       try {
         const response = await processUserMessage(question);
@@ -51,6 +69,7 @@ const AssistantIA = forwardRef<AssistantIARef, AssistantIAProps>(({
       }
 
       setIsLoading(false);
+      setThinkingMessage('');
     }
   }));
 
@@ -60,19 +79,18 @@ const AssistantIA = forwardRef<AssistantIARef, AssistantIAProps>(({
       const valid = await validateConfig();
       setIsConfigValid(valid);
       
-      // Message de présentation initial
+      // Message de présentation initial enrichi
       const welcomeMessage = {
         role: 'assistant' as const,
-        content: `Bonjour ! 👋 Je suis votre assistant spécialisé en télécommunications.
+        content: `Salut ! 😊 Bienvenue dans l'univers des télécommunications ! Je suis ton assistant IA, ici pour rendre les choses simples et amusantes. Que veux-tu explorer aujourd'hui ? Voici quelques idées :
 
-Je peux vous aider sur plusieurs domaines :
+📱 **GSM** : Découvre comment dimensionner un réseau 2G.
+📶 **UMTS** : Plonge dans les réseaux 3G et leurs subtilités.
+📡 **Hertzien** : Analyse les liaisons radio point à point.
+🔌 **Fibre optique** : Comprends les réseaux à très haut débit.
+🌐 **Simulations 3D** : Visualise tout ça en action !
 
-📱 **GSM** : Dimensionnement, TRX, trafic Erlang
-📡 **UMTS** : NodeB, facteur de charge, couverture
-🛰️ **Liaisons Hertziennes** : Zones de Fresnel, bilans de liaison
-🔌 **Fibre Optique** : Atténuation, épissures, connectique
-
-N'hésitez pas à me poser vos questions ! Vous pouvez aussi cliquer sur les exemples de questions dans le guide d'utilisation. 😊`
+Pose-moi une question, je suis prêt à t'aider ! 🚀`
       };
       setMessages([welcomeMessage]);
     };
@@ -95,6 +113,7 @@ N'hésitez pas à me poser vos questions ! Vous pouvez aussi cliquer sur les exe
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
+    setThinkingMessage(getRandomThinkingMessage());
 
     try {
       const response = await processUserMessage(userMessage);
@@ -109,6 +128,7 @@ N'hésitez pas à me poser vos questions ! Vous pouvez aussi cliquer sur les exe
     }
 
     setIsLoading(false);
+    setThinkingMessage('');
   };
 
   const formatMessage = (content: string) => {
@@ -174,7 +194,7 @@ N'hésitez pas à me poser vos questions ! Vous pouvez aussi cliquer sur les exe
               <div className="bg-gray-100 dark:bg-gray-800 dark:text-white rounded-lg p-3">
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">L'assistant réfléchit...</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{thinkingMessage}</span>
                 </div>
               </div>
             </div>

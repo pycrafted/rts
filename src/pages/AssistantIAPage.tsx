@@ -47,28 +47,40 @@ const AssistantIAPage: React.FC = () => {
                   <h4 className="font-semibold text-gray-900">Exemples de questions :</h4>
                   <div className="space-y-2 text-sm">
                     <button 
-                      onClick={() => handleCardClick("Comment calculer le nombre de TRX ?")}
+                      onClick={() => handleCardClick("Comment calculer le nombre de TRX pour un réseau GSM ?")}
                       className="w-full p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400 hover:bg-blue-100 transition-colors text-left"
                     >
-                      <strong>GSM :</strong> "Comment calculer le nombre de TRX ?"
+                      <strong>GSM :</strong> "Comment calculer le nombre de TRX pour un réseau GSM ?"
                     </button>
                     <button 
-                      onClick={() => handleCardClick("Comment dimensionner un NodeB ?")}
+                      onClick={() => handleCardClick("Comment optimiser un réseau UMTS avec le facteur de charge ?")}
                       className="w-full p-3 bg-green-50 rounded-lg border-l-4 border-green-400 hover:bg-green-100 transition-colors text-left"
                     >
-                      <strong>UMTS :</strong> "Comment dimensionner un NodeB ?"
+                      <strong>UMTS :</strong> "Comment optimiser un réseau UMTS avec le facteur de charge ?"
                     </button>
                     <button 
-                      onClick={() => handleCardClick("Comment calculer les zones de Fresnel ?")}
+                      onClick={() => handleCardClick("Comment calculer les zones de Fresnel pour une liaison hertzienne ?")}
                       className="w-full p-3 bg-purple-50 rounded-lg border-l-4 border-purple-400 hover:bg-purple-100 transition-colors text-left"
                     >
-                      <strong>Hertzien :</strong> "Comment calculer les zones de Fresnel ?"
+                      <strong>Hertzien :</strong> "Comment calculer les zones de Fresnel pour une liaison hertzienne ?"
                     </button>
                     <button 
-                      onClick={() => handleCardClick("Comment calculer l'atténuation fibre ?")}
+                      onClick={() => handleCardClick("Comment analyser les défauts d'une fibre optique avec un OTDR ?")}
                       className="w-full p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400 hover:bg-orange-100 transition-colors text-left"
                     >
-                      <strong>Optique :</strong> "Comment calculer l'atténuation fibre ?"
+                      <strong>Optique :</strong> "Comment analyser les défauts d'une fibre optique avec un OTDR ?"
+                    </button>
+                    <button 
+                      onClick={() => handleCardClick("Comment utiliser les simulations 3D dans l'application ?")}
+                      className="w-full p-3 bg-indigo-50 rounded-lg border-l-4 border-indigo-400 hover:bg-indigo-100 transition-colors text-left"
+                    >
+                      <strong>Simulations :</strong> "Comment utiliser les simulations 3D dans l'application ?"
+                    </button>
+                    <button 
+                      onClick={() => handleCardClick("Quelles sont les formules importantes en télécoms ?")}
+                      className="w-full p-3 bg-teal-50 rounded-lg border-l-4 border-teal-400 hover:bg-teal-100 transition-colors text-left"
+                    >
+                      <strong>Formules :</strong> "Quelles sont les formules importantes en télécoms ?"
                     </button>
                   </div>
                 </div>
