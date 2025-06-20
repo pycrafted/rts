@@ -39,5 +39,9 @@ export default defineConfig({
             '@react-three/fiber',
             '@react-three/drei'
         ]
+    },
+    // Configuration CSS pour utiliser PostCSS avec autoprefixer
+    css: {
+        postcss: './postcss.config.cjs'
     }
 });
