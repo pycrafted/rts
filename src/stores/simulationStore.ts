@@ -4,7 +4,9 @@ interface Antenna {
   id: string;
   position: [number, number, number];
   gain: number;
-  type: 'tx' | 'rx';
+  type: 'tx' | 'rx' | 'parabolic';
+  frequency: number;
+  power: number;
 }
 
 interface Terrain {

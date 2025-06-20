@@ -37,8 +37,6 @@ const pedagogicHelp = {
 const SimulationVisualization: React.FC<{setObstacles: (obstacles: any) => void}> = ({setObstacles}) => {
   const [values, setValues] = useState(initialValues);
   const [showWhy, setShowWhy] = useState<{ [k: string]: boolean }>({});
-  const [showGlossaire, setShowGlossaire] = useState(false);
-  const [glossaireFocus, setGlossaireFocus] = useState<string | undefined>(undefined);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
@@ -48,9 +46,8 @@ const SimulationVisualization: React.FC<{setObstacles: (obstacles: any) => void}
     setShowWhy((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const handleOpenGlossaire = (id: string) => {
-    setGlossaireFocus(id);
-    setShowGlossaire(true);
+  const handleOpenGlossaire = () => {
+    // Fonction pour ouvrir le glossaire si nécessaire
   };
 
   const generateRandomObstacles = () => {
@@ -196,7 +193,7 @@ const SimulationVisualization: React.FC<{setObstacles: (obstacles: any) => void}
           <div className="mt-4 text-right">
             <button
               type="button"
-              onClick={() => setShowGlossaire(true)}
+              onClick={() => handleOpenGlossaire()}
               className="inline-flex items-center text-blue-600 hover:text-blue-800"
             >
               <span className="mr-1">📖</span> Glossaire

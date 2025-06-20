@@ -1,10 +1,10 @@
 import React from 'react';
-import SimulationView from './AddObstacle';
+import SimulationView from './SimulationView';
 
 const Simulation: React.FC = () => {
   return (
     <div className="h-screen">
-      <SimulationView />
+      <SimulationView isActive={false} />
     </div>
   );
 };

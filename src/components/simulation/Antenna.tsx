@@ -4,7 +4,7 @@ import { Cylinder, Text } from '@react-three/drei';
 interface AntennaProps {
   position: [number, number, number];
   gain: number;
-  type?: 'tx' | 'rx';
+  type?: 'tx' | 'rx' | 'parabolic';
 }
 
 export const Antenna: React.FC<AntennaProps> = ({
@@ -45,7 +45,7 @@ export const Antenna: React.FC<AntennaProps> = ({
       <Text
         position={[0, 4, 0]}
         fontSize={0.2}
-        color={type === 'tx' ? '#ff0000' : '#00ff00'}
+        color={type === 'tx' ? '#ff0000' : type === 'rx' ? '#00ff00' : '#ffff00'}
         anchorX="center"
         anchorY="middle"
       >

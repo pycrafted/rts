@@ -7,7 +7,6 @@ export const SimulationControls: React.FC = () => {
   const handleAddAntenna = () => {
     addAntenna({
       position: [0, 0, 0],
-      rotation: [0, 0, 0],
       type: 'parabolic',
       gain: 20,
       frequency: 2400,
@@ -37,7 +36,7 @@ export const SimulationControls: React.FC = () => {
             <div className="flex justify-between items-center">
               <span className="font-medium">Antenne {index + 1}</span>
               <button
-                onClick={() => removeAntenna(index)}
+                onClick={() => removeAntenna(antenna.id)}
                 className="text-red-400 hover:text-red-300"
               >
                 Supprimer
