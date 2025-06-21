@@ -53,8 +53,20 @@ const MobileOptimizer: React.FC<MobileOptimizerProps> = ({ children }) => {
       }
     };
 
+    // Variables pour détecter le double tap
+    let lastTap = 0;
+    const doubleTapDelay = 300; // 300ms pour détecter un double tap
+
     const preventDoubleTap = (e: TouchEvent) => {
-      e.preventDefault();
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      
+      // Si c'est un double tap rapide, empêcher le zoom
+      if (tapLength < doubleTapDelay && tapLength > 0) {
+        e.preventDefault();
+      }
+      
+      lastTap = currentTime;
     };
 
     // Appliquer les optimisations tactiles
