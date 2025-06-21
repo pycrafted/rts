@@ -1,26 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RTS-Tutor - Simulation Télécoms</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    
+    <!-- Métadonnées PWA -->
+    <meta name="description" content="Application de dimensionnement télécoms - GSM, UMTS, Hertzien, Optique" />
+    <meta name="keywords" content="télécoms, dimensionnement, GSM, UMTS, hertzien, optique, simulation" />
+    <meta name="author" content="Télécoms Dimensionnement" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#3b82f6" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="RTS-Tutor" />
+    <meta name="apple-mobile-web-app-title" content="Télécoms" />
+    
+    <!-- Icônes PWA -->
     <link rel="apple-touch-icon" href="/vite.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/vite.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/vite.svg" />
     
-    <!-- Preload critical resources -->
-    <link rel="preload" href="/src/main.tsx" as="script" />
-    <link rel="preload" href="/src/index.css" as="style" />
+    <!-- Préchargement des polices -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
-    <!-- DNS prefetch for external resources -->
-    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <!-- Optimisations mobile -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <title>Télécoms Dimensionnement</title>
   </head>
   <body>
     <div id="root"></div>

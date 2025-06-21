@@ -151,10 +151,11 @@ Pose-moi une question, je suis prêt à t'aider ! 🚀`
 
   return (
     <Card className={cn("h-full flex flex-col", className)}>
-      <CardHeader className="border-b border-gray-200">
-        <CardTitle className="flex items-center gap-2">
-          <span className="text-2xl">🤖</span>
-          {title}
+      <CardHeader className="border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <span className="text-xl sm:text-2xl">🤖</span>
+          <span className="hidden sm:inline">{title}</span>
+          <span className="sm:hidden">Assistant IA</span>
           {isConfigValid === false && (
             <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
               Configuration manquante
@@ -165,21 +166,22 @@ Pose-moi une question, je suis prêt à t'aider ! 🚀`
 
       <CardContent className="flex-1 flex flex-col p-0">
         {/* Zone des messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-96">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[60vh] sm:max-h-96">
           {messages.map((message, index) => (
             <div
               key={index}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
+                className={cn(
+                  "max-w-[85%] sm:max-w-[80%] rounded-lg p-3 sm:p-4",
                   message.role === 'user'
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-primary-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 dark:text-white'
-                }`}
+                )}
               >
                 <div 
-                  className="whitespace-pre-wrap"
+                  className="whitespace-pre-wrap text-sm sm:text-base leading-relaxed"
                   dangerouslySetInnerHTML={{ 
                     __html: formatMessage(message.content) 
                   }}
@@ -191,10 +193,10 @@ Pose-moi une question, je suis prêt à t'aider ! 🚀`
           {/* Indicateur de chargement */}
           {isLoading && (
             <div className="flex justify-start gap-3">
-              <div className="bg-gray-100 dark:bg-gray-800 dark:text-white rounded-lg p-3">
+              <div className="bg-gray-100 dark:bg-gray-800 dark:text-white rounded-lg p-3 sm:p-4">
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">{thinkingMessage}</span>
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">{thinkingMessage}</span>
                 </div>
               </div>
             </div>
@@ -204,15 +206,15 @@ Pose-moi une question, je suis prêt à t'aider ! 🚀`
         </div>
 
         {/* Zone de saisie */}
-        <div className="border-t border-gray-200 p-4">
-          <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="border-t border-gray-200 p-3 sm:p-4">
+          <form onSubmit={handleSubmit} className="flex gap-2 sm:gap-3">
             <div className="flex-1 relative">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={isConfigValid === false ? "Configuration manquante - Vérifiez .env" : placeholder}
-                className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 sm:py-3 text-sm sm:text-base focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 form-input-mobile"
                 disabled={isLoading || isConfigValid === false}
               />
             </div>
@@ -223,15 +225,20 @@ Pose-moi une question, je suis prêt à t'aider ! 🚀`
               loading={isLoading}
               icon="📤"
               size="sm"
-              className="self-end"
+              className="self-end form-button-mobile"
             >
-              {isLoading ? 'Envoi...' : 'Envoyer'}
+              <span className="hidden sm:inline">
+                {isLoading ? 'Envoi...' : 'Envoyer'}
+              </span>
+              <span className="sm:hidden">
+                {isLoading ? '...' : '→'}
+              </span>
             </Button>
           </form>
 
           {/* Message d'erreur */}
           {error && (
-            <div className="mt-2 text-xs text-error-600 bg-error-50 p-2 rounded">
+            <div className="mt-2 text-xs sm:text-sm text-error-600 bg-error-50 p-2 sm:p-3 rounded">
               {error}
             </div>
           )}

@@ -14,14 +14,17 @@ const FloatingAssistant: React.FC<FloatingAssistantProps> = ({ className }) => {
 
   // Mémoriser les classes CSS pour éviter les recalculs
   const buttonClasses = useMemo(() => cn(
-    "fixed bottom-6 right-6 z-50",
+    "fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50",
     className
   ), [className]);
 
-  const assistantClasses = useMemo(() => 
-    "fixed bottom-24 right-6 z-50 w-96 h-[500px] shadow-2xl rounded-xl overflow-hidden",
-    []
-  );
+  const assistantClasses = useMemo(() => cn(
+    "fixed z-50 shadow-2xl rounded-xl overflow-hidden",
+    // Mobile: plein écran avec safe areas
+    "bottom-0 left-0 right-0 h-[85vh] sm:h-[500px]",
+    // Desktop: position fixe
+    "sm:bottom-24 sm:right-6 sm:left-auto sm:w-96"
+  ), []);
 
   // Optimiser les callbacks
   const handleToggle = useCallback(() => setIsOpen(prev => !prev), []);
@@ -43,7 +46,13 @@ const FloatingAssistant: React.FC<FloatingAssistantProps> = ({ className }) => {
           variant="primary"
           size="lg"
           icon={isOpen ? "✕" : "🤖"}
-          className="rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-all duration-300"
+          className={cn(
+            "rounded-full shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation",
+            // Mobile: plus petit
+            "w-12 h-12 sm:w-14 sm:h-14",
+            // Mobile: position différente si ouvert
+            isOpen && "sm:relative"
+          )}
         >
           {!isOpen && <span className="sr-only">Ouvrir l'assistant IA</span>}
         </Button>
@@ -65,7 +74,7 @@ const FloatingAssistant: React.FC<FloatingAssistantProps> = ({ className }) => {
       {/* Overlay pour fermer - conditionnel */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-25"
+          className="fixed inset-0 z-40 bg-black bg-opacity-25 sm:bg-opacity-25"
           onClick={handleClose}
         />
       )}

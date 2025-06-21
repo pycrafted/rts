@@ -78,18 +78,18 @@ const OptiqueMaintenance: React.FC<OptiqueMaintenanceProps> = ({ onScenarioSelec
   const selectedScenario = maintenanceScenarios.find(s => s.id === selectedScenarioId);
 
   return (
-    <div className="space-y-4 text-sm">
+    <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
       <div>
         <label className="flex items-center font-medium text-slate-300 mb-2">
           Scénarios Pédagogiques
           <InfoBulle content="Simulez des pannes communes pour apprendre à les diagnostiquer." />
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-wrap sm:flex-row gap-2">
           {maintenanceScenarios.map((scenario) => (
             <button
               key={scenario.id}
               onClick={() => handleScenarioSelect(scenario)}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+              className={`px-3 py-2 text-xs font-semibold rounded-lg transition-colors touch-manipulation min-h-[32px] flex items-center justify-center ${
                 selectedScenarioId === scenario.id
                   ? 'bg-cyan-500 text-white'
                   : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
@@ -102,12 +102,12 @@ const OptiqueMaintenance: React.FC<OptiqueMaintenanceProps> = ({ onScenarioSelec
       </div>
 
       {selectedScenario && (
-        <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+        <div className="p-2 sm:p-3 bg-slate-900/50 rounded-lg border border-slate-700">
           <p className="text-slate-300 text-xs italic mb-2">{selectedScenario.description}</p>
-          <h5 className="text-sm font-semibold text-cyan-400 mb-2">Étapes à suivre :</h5>
+          <h5 className="text-xs sm:text-sm font-semibold text-cyan-400 mb-2">Étapes à suivre :</h5>
           <ol className="list-decimal list-inside space-y-1 text-slate-300 text-xs">
             {selectedScenario.steps.map((step, index) => (
-              <li key={index}>{step}</li>
+              <li key={index} className="leading-relaxed">{step}</li>
             ))}
           </ol>
         </div>

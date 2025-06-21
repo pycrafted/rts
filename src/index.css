@@ -1,9 +1,302 @@
+/* 
+ * Configuration Tailwind CSS
+ * Les directives @tailwind sont traitées par PostCSS et Vite
+ * Les avertissements VS Code peuvent être ignorés
+ */
 @import '@fontsource/inter/400.css';
 @import '@fontsource/inter/600.css';
 @import '@fontsource/inter/700.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Variables CSS personnalisées */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* Optimisations globales */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Optimisations mobile */
+@media (max-width: 1023px) {
+  body {
+    /* Empêcher le zoom sur double tap */
+    touch-action: manipulation;
+    /* Améliorer le scroll sur iOS */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Optimiser les interactions tactiles */
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Améliorer la lisibilité sur mobile */
+  input, textarea, select {
+    font-size: 16px; /* Évite le zoom sur iOS */
+  }
+}
+
+/* Classes utilitaires pour mobile */
+.mobile-optimizer {
+  width: 100%;
+  height: 100%;
+}
+
+.mobile-optimizer.mobile {
+  /* Optimisations spécifiques mobile */
+  overflow-x: hidden;
+}
+
+.mobile-optimizer.standalone {
+  /* Styles pour PWA standalone */
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+}
+
+/* Animations optimisées pour mobile */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Optimisations pour les écrans tactiles */
+@media (hover: none) and (pointer: coarse) {
+  /* Désactiver les effets hover sur mobile */
+  .hover\:bg-gray-50:hover,
+  .hover\:text-gray-900:hover,
+  .hover\:bg-gray-100:hover,
+  .hover\:text-gray-500:hover,
+  .hover\:text-gray-300:hover,
+  .hover\:bg-white:hover,
+  .hover\:bg-opacity-10:hover {
+    background-color: inherit !important;
+    color: inherit !important;
+  }
+}
+
+/* Support des safe areas iOS */
+@supports (padding: max(0px)) {
+  .pt-safe-top {
+    padding-top: max(0px, var(--safe-area-inset-top));
+  }
+  
+  .pb-safe-bottom {
+    padding-bottom: max(0px, var(--safe-area-inset-bottom));
+  }
+  
+  .pl-safe-left {
+    padding-left: max(0px, var(--safe-area-inset-left));
+  }
+  
+  .pr-safe-right {
+    padding-right: max(0px, var(--safe-area-inset-right));
+  }
+}
+
+/* Optimisations pour les formulaires mobiles */
+@media (max-width: 1023px) {
+  .form-input-mobile {
+    font-size: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+  
+  .form-button-mobile {
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 8px;
+    min-height: 48px;
+  }
+}
+
+/* Optimisations pour les cartes mobiles */
+@media (max-width: 1023px) {
+  .card-mobile {
+    margin: 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-mobile:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Optimisations pour la navigation mobile */
+@media (max-width: 1023px) {
+  .nav-item-mobile {
+    padding: 16px 12px;
+    margin: 4px 0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-item-mobile:active {
+    background-color: rgba(59, 130, 246, 0.1);
+    transform: scale(0.95);
+  }
+}
+
+/* Optimisations pour les modales mobiles */
+@media (max-width: 1023px) {
+  .modal-mobile {
+    padding: 16px;
+    border-radius: 16px 16px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .modal-overlay-mobile {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* Optimisations pour les tableaux mobiles */
+@media (max-width: 1023px) {
+  .table-mobile {
+    font-size: 14px;
+  }
+  
+  .table-mobile th,
+  .table-mobile td {
+    padding: 8px 4px;
+  }
+}
+
+/* Optimisations pour les graphiques mobiles */
+@media (max-width: 1023px) {
+  .chart-mobile {
+    height: 200px;
+    margin: 8px 0;
+  }
+}
+
+/* Optimisations pour les simulations 3D mobiles */
+@media (max-width: 1023px) {
+  .simulation-3d-mobile {
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  
+  .simulation-controls-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 16px;
+    border-top: 1px solid #e5e7eb;
+    z-index: 1000;
+  }
+}
+
+/* Optimisations pour l'assistant IA mobile */
+@media (max-width: 1023px) {
+  .assistant-mobile {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+  }
+  
+  .assistant-chat-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70vh;
+    border-radius: 16px 16px 0 0;
+    z-index: 1001;
+  }
+}
+
+/* Optimisations pour le mode sombre mobile */
+@media (max-width: 1023px) {
+  .dark .card-mobile {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+  }
+  
+  .dark .modal-mobile {
+    background-color: #111827;
+  }
+  
+  .dark .simulation-controls-mobile {
+    background: rgba(17, 24, 39, 0.95);
+    border-top: 1px solid #374151;
+  }
+}
+
+/* Optimisations pour les performances */
+@media (max-width: 1023px) {
+  /* Réduire les animations sur mobile pour économiser la batterie */
+  .animate-spin {
+    animation-duration: 1s;
+  }
+  
+  /* Optimiser les transitions */
+  .transition-all {
+    transition-duration: 0.2s;
+  }
+}
+
+/* Support pour les appareils à écran haute densité */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Optimisations pour les écrans Retina */
+  .high-dpi-optimized {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Optimisations pour les appareils avec notch */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .notch-aware {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
 
 /* Ajoutez ici uniquement des styles utilitaires spécifiques non couverts par Tailwind si besoin */
 

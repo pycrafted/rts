@@ -27,17 +27,17 @@ const OptiqueAdvancedControls: React.FC<OptiqueAdvancedControlsProps> = ({
   onDispersionChange,
 }) => {
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
       {/* Type de fibre */}
       <div>
-        <label className="flex items-center font-medium text-slate-300">
+        <label className="flex items-center font-medium text-slate-300 mb-1 sm:mb-2">
           Type de Fibre
           <InfoBulle content="Monomode: signal unique, longues distances. Multimode: signaux multiples, courtes distances." />
         </label>
         <select
           value={fiberType}
           onChange={(e) => onFiberTypeChange(e.target.value as any)}
-          className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md mt-1 text-white"
+          className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md text-white form-input-mobile"
         >
           <option value="monomode">Monomode</option>
           <option value="multimode">Multimode</option>
@@ -46,7 +46,7 @@ const OptiqueAdvancedControls: React.FC<OptiqueAdvancedControlsProps> = ({
 
       {/* Longueur d'onde */}
       <div>
-        <label className="flex items-center font-medium text-slate-300">
+        <label className="flex items-center font-medium text-slate-300 mb-1 sm:mb-2">
           Longueur d'onde : <span className="font-bold text-cyan-400 ml-1">{wavelength} nm</span>
           <InfoBulle content="Fenêtre de transmission du signal. Affecte l'atténuation." />
         </label>
@@ -57,13 +57,13 @@ const OptiqueAdvancedControls: React.FC<OptiqueAdvancedControlsProps> = ({
           step="10"
           value={wavelength}
           onChange={(e) => onWavelengthChange(Number(e.target.value))}
-          className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb"
+          className="w-full h-2 sm:h-3 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb touch-manipulation"
         />
       </div>
 
       {/* Température */}
       <div>
-        <label className="flex items-center font-medium text-slate-300">
+        <label className="flex items-center font-medium text-slate-300 mb-1 sm:mb-2">
           Température : <span className="font-bold text-cyan-400 ml-1">{temperature}°C</span>
           <InfoBulle content="La température peut altérer les propriétés physiques de la fibre et augmenter les pertes." />
         </label>
@@ -74,13 +74,13 @@ const OptiqueAdvancedControls: React.FC<OptiqueAdvancedControlsProps> = ({
           step="1"
           value={temperature}
           onChange={(e) => onTemperatureChange(Number(e.target.value))}
-          className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb"
+          className="w-full h-2 sm:h-3 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb touch-manipulation"
         />
       </div>
 
       {/* Dispersion */}
       <div>
-        <label className="flex items-center font-medium text-slate-300">
+        <label className="flex items-center font-medium text-slate-300 mb-1 sm:mb-2">
           Dispersion : <span className="font-bold text-cyan-400 ml-1">{dispersion.toFixed(1)} ps/nm/km</span>
           <InfoBulle content="Étalement du signal qui peut limiter la bande passante. Idéalement proche de zéro." />
         </label>
@@ -91,7 +91,7 @@ const OptiqueAdvancedControls: React.FC<OptiqueAdvancedControlsProps> = ({
           step="0.1"
           value={dispersion}
           onChange={(e) => onDispersionChange(Number(e.target.value))}
-          className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb"
+          className="w-full h-2 sm:h-3 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb touch-manipulation"
         />
       </div>
 
@@ -102,9 +102,9 @@ const OptiqueAdvancedControls: React.FC<OptiqueAdvancedControlsProps> = ({
           id="showCrossSection"
           checked={showCrossSection}
           onChange={(e) => onShowCrossSectionChange(e.target.checked)}
-          className="h-4 w-4 rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-cyan-600"
+          className="h-4 w-4 rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-cyan-600 touch-manipulation"
         />
-        <label htmlFor="showCrossSection" className="ml-2 text-slate-300">
+        <label htmlFor="showCrossSection" className="ml-2 text-slate-300 text-xs sm:text-sm">
           Voir la coupe transversale
         </label>
       </div>

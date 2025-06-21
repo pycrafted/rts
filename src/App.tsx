@@ -6,6 +6,7 @@
  * - Le routage entre les différentes pages
  * - L'intégration du design system moderne
  * - L'assistant IA flottant global
+ * - L'optimisation mobile
  * 
  * @component
  */
@@ -13,6 +14,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import FloatingAssistant from './components/ai/FloatingAssistant';
+import MobileOptimizer from './components/common/MobileOptimizer';
 
 // Lazy loading des pages pour optimiser les performances
 const Simulation = lazy(() => import('@/pages/Simulation'));
@@ -37,30 +39,32 @@ const LoadingSpinner = () => (
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Layout>
-        <Suspense fallback={<LoadingSpinner />}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/assistant-ia" element={<AssistantIAPage />} />
-            <Route path="/gsm" element={<GSMPage />} />
-            <Route path="/umts" element={<UMTSPage />} />
-            <Route path="/hertzien" element={<HertzienForm />} />
-            <Route path="/optique" element={<OptiqueForm />} />
-            <Route path="/simulation" element={<Simulation />} />
-            <Route path="/simulation/optique" element={<OptiqueSimulation />} />
-            <Route path="/simulation/hertzien" element={<HertzienSimulation />} />
-            <Route path="/simulation/gsm" element={<GSMCoverageDemo />} />
-            <Route path="/simulation/umts" element={<UMTSSimulation />} />
-            <Route path="/documentation" element={<Documentation />} />
-          </Routes>
-        </Suspense>
-        
-        {/* Assistant IA flottant global */}
-        <FloatingAssistant />
-      </Layout>
-    </Router>
+    <MobileOptimizer>
+      <Router>
+        <Layout>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/assistant-ia" element={<AssistantIAPage />} />
+              <Route path="/gsm" element={<GSMPage />} />
+              <Route path="/umts" element={<UMTSPage />} />
+              <Route path="/hertzien" element={<HertzienForm />} />
+              <Route path="/optique" element={<OptiqueForm />} />
+              <Route path="/simulation" element={<Simulation />} />
+              <Route path="/simulation/optique" element={<OptiqueSimulation />} />
+              <Route path="/simulation/hertzien" element={<HertzienSimulation />} />
+              <Route path="/simulation/gsm" element={<GSMCoverageDemo />} />
+              <Route path="/simulation/umts" element={<UMTSSimulation />} />
+              <Route path="/documentation" element={<Documentation />} />
+            </Routes>
+          </Suspense>
+          
+          {/* Assistant IA flottant global */}
+          <FloatingAssistant />
+        </Layout>
+      </Router>
+    </MobileOptimizer>
   );
 };
 

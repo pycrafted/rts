@@ -12,19 +12,39 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { darkMode } = useSettingsStore();
+
+  // Détection mobile optimisée
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Mémoriser les classes CSS pour éviter les recalculs
   const layoutClasses = useMemo(() => cn(
     "min-h-screen",
+    "pt-safe-top pb-safe-bottom", // Support des safe areas iOS
     darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
   ), [darkMode]);
 
   const sidebarClasses = useMemo(() => cn(
-    'fixed inset-y-0 left-0 z-50 w-72 transform shadow-xl transition-transform duration-300 ease-in-out lg:hidden',
+    'fixed inset-y-0 left-0 z-50 w-72 transform shadow-xl transition-transform duration-300 ease-in-out',
+    'lg:hidden', // Caché sur desktop
     darkMode ? 'bg-gray-800' : 'bg-white',
     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
   ), [darkMode, sidebarOpen]);
+
+  const mainContentClasses = useMemo(() => cn(
+    'transition-all duration-300 ease-in-out',
+    'lg:pl-72', // Padding pour sidebar desktop
+    isMobile ? 'pl-0' : 'lg:pl-72'
+  ), [isMobile]);
 
   // Optimiser les callbacks pour éviter les re-renders
   const handleMenuClick = useCallback(() => setSidebarOpen(true), []);
@@ -61,11 +81,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       {/* Contenu principal */}
-      <div className="lg:pl-72">
+      <div className={mainContentClasses}>
         <Header onMenuClick={handleMenuClick} />
         
-        <main className="py-6">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <main className="py-4 sm:py-6">
+          <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8">
             {children}
           </div>
         </main>
