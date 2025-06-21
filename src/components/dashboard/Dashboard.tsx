@@ -310,10 +310,10 @@ const Dashboard: React.FC = () => {
                 className="nav-item-mobile p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center space-x-3">
-                  <span className="text-xl sm:text-2xl">{action.icon}</span>
+                  <span className="text-xl sm:text-2xl flex-shrink-0">{action.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{action.title}</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">{action.description}</p>
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{action.title}</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{action.description}</p>
                   </div>
                 </div>
               </Link>
@@ -405,19 +405,19 @@ const Dashboard: React.FC = () => {
               <div className="space-y-2 sm:space-y-3">
                 {gsmHistory.slice(0, 3).map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">
+                    <div className="flex-1 min-w-0 mr-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">
                         {item.nbAbonnes?.toLocaleString()} abonnés
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 truncate">
                         {new Date(item.date).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="text-right ml-2">
-                      <p className="font-medium text-primary-600 text-sm">
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-medium text-primary-600 text-sm truncate">
                         {item.nbSites} sites
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 truncate">
                         {item.nbTRX} TRX
                       </p>
                     </div>
@@ -442,19 +442,19 @@ const Dashboard: React.FC = () => {
               <div className="space-y-2 sm:space-y-3">
                 {umtsHistory.slice(0, 3).map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">
+                    <div className="flex-1 min-w-0 mr-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">
                         {item.debitTotal?.toLocaleString()} kbps
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 truncate">
                         {new Date(item.date).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="text-right ml-2">
-                      <p className="font-medium text-primary-600 text-sm">
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-medium text-primary-600 text-sm truncate">
                         {item.nbNodeB} NodeB
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 truncate">
                         {item.nbCellules} cellules
                       </p>
                     </div>
@@ -476,16 +476,16 @@ const Dashboard: React.FC = () => {
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className="text-2xl sm:text-4xl">🤖</div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Besoin d'aide technique ?</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">Consultez notre assistant IA spécialisé</p>
+                <div className="text-2xl sm:text-4xl flex-shrink-0">🤖</div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Besoin d'aide technique ?</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">Consultez notre assistant IA spécialisé</p>
                 </div>
               </div>
-              <Link to="/assistant-ia" className="w-full sm:w-auto">
+              <Link to="/assistant-ia" className="w-full sm:w-auto flex-shrink-0">
                 <Button variant="primary" size="sm" className="w-full sm:w-auto form-button-mobile">
                   <span>💬</span>
-                  <span className="ml-2">Assistant IA</span>
+                  <span className="ml-2 truncate">Assistant IA</span>
                 </Button>
               </Link>
             </div>
@@ -498,7 +498,7 @@ const Dashboard: React.FC = () => {
         <CardContent className="p-4 sm:p-6">
           <div className="text-center sm:text-left space-y-3">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-900">📚 Documentation</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 line-clamp-3">
               Consultez la documentation complète pour maîtriser tous les aspects des télécommunications.
             </p>
             <Link

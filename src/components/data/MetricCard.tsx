@@ -68,11 +68,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
       )}
     >
       <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="flex items-center space-x-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {icon && (
               <div className={cn(
-                'flex items-center justify-center rounded-lg bg-gray-100 p-2',
+                'flex items-center justify-center rounded-lg bg-gray-100 p-2 flex-shrink-0',
                 iconColors[variant],
                 iconSizes[size]
               )}>
@@ -81,22 +81,22 @@ const MetricCard: React.FC<MetricCardProps> = ({
             )}
             
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-600 truncate">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
                 {title}
               </p>
               
-              <div className="flex items-baseline space-x-2">
+              <div className="flex items-baseline space-x-1 sm:space-x-2">
                 <p className={cn(
-                  'font-bold tracking-tight',
+                  'font-bold tracking-tight truncate',
                   valueColors[variant],
-                  size === 'sm' ? 'text-lg' : size === 'md' ? 'text-2xl' : 'text-3xl'
+                  size === 'sm' ? 'text-base sm:text-lg' : size === 'md' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
                 )}>
                   {value}
                 </p>
                 
                 {trend && (
                   <div className={cn(
-                    'flex items-center text-xs font-medium',
+                    'flex items-center text-xs font-medium flex-shrink-0',
                     trend.isPositive ? 'text-success-600' : 'text-error-600'
                   )}>
                     <svg
@@ -119,7 +119,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
               </div>
               
               {description && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1 truncate">
                   {description}
                 </p>
               )}

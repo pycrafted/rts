@@ -16,6 +16,11 @@ Le dashboard a été complètement refait avec une approche **Mobile-First** pou
 - **Solution** : Refonte complète avec approche Mobile-First
 - **Résultat** : Interface fluide et intuitive sur tous les écrans
 
+### 3. **Débordement de texte sur mobile** ✅
+- **Problème** : Le texte débordait des cartes sur mobile
+- **Solution** : Ajout de classes `truncate`, `line-clamp` et `flex-shrink-0`
+- **Résultat** : Texte parfaitement contenu dans les cartes
+
 ## 🚀 Améliorations Apportées
 
 ### 1. **Hiérarchie Mobile-First** ✅
@@ -121,6 +126,39 @@ Le dashboard a été complètement refait avec une approche **Mobile-First** pou
 - Layout horizontal
 - Bouton compact
 - Texte normal
+
+### 8. **Gestion du Débordement de Texte** ✅
+
+**Classes CSS ajoutées :**
+```css
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+```
+
+**Optimisations appliquées :**
+- **Titres** : `truncate` pour éviter le débordement
+- **Descriptions** : `line-clamp-2` pour limiter à 2 lignes
+- **Icônes** : `flex-shrink-0` pour maintenir la taille
+- **Conteneurs** : `min-w-0` pour permettre la compression
+- **Espacement** : `mr-2` pour séparer les éléments
 
 ## 📱 Classes CSS Utilisées
 

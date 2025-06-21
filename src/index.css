@@ -303,3 +303,55 @@ body {
 /* Classes nécessaires pour overlays/infobulles :
    z-10 z-20 z-30 z-40 z-50 left-1/2 -translate-x-1/2
 */
+
+/* Classes utilitaires pour le débordement de texte */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Optimisations pour le texte sur mobile */
+@media (max-width: 1023px) {
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Assurer que les icônes ne rétrécissent pas */
+  .flex-shrink-0 {
+    flex-shrink: 0;
+  }
+  
+  /* Optimiser l'espacement des éléments flex */
+  .min-w-0 {
+    min-width: 0;
+  }
+  
+  /* Améliorer la lisibilité du texte sur mobile */
+  .text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  .text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
