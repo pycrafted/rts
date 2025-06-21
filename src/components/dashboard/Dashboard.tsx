@@ -210,24 +210,27 @@ const Dashboard: React.FC = () => {
   ], []);
 
   return (
-    <div className="space-y-6">
-      {/* En-tête du dashboard */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-2 text-gray-600">
+    <div className="space-y-4 sm:space-y-6">
+      {/* En-tête du dashboard - Mobile First */}
+      <div className="space-y-4">
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
             Vue d'ensemble de vos dimensionnements télécoms
           </p>
         </div>
         
-        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
+        {/* Boutons d'action - Mobile: menu hamburger, Desktop: boutons */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
             variant="outline"
             size="sm"
             icon="📊"
             onClick={exportPDFReport}
+            className="w-full sm:w-auto"
           >
-            Exporter PDF
+            <span className="hidden sm:inline">Exporter PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
           
           <Button
@@ -235,8 +238,10 @@ const Dashboard: React.FC = () => {
             size="sm"
             icon="📁"
             onClick={() => fileInputRef.current?.click()}
+            className="w-full sm:w-auto"
           >
-            Importer
+            <span className="hidden sm:inline">Importer</span>
+            <span className="sm:hidden">Import</span>
           </Button>
           
           <Button
@@ -244,16 +249,18 @@ const Dashboard: React.FC = () => {
             size="sm"
             icon="💾"
             onClick={exportAllHistories}
+            className="w-full sm:w-auto"
           >
-            Exporter tout
+            <span className="hidden sm:inline">Exporter tout</span>
+            <span className="sm:hidden">Export</span>
           </Button>
         </div>
       </div>
 
-      {/* Métriques principales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Métriques principales - Mobile: 2 colonnes, Desktop: 4 colonnes */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <MetricCard
-          title="Total Sites/NodeB"
+          title="Total Sites"
           value={totalSites}
           description="Sites déployés"
           icon="📡"
@@ -262,7 +269,7 @@ const Dashboard: React.FC = () => {
         />
         
         <MetricCard
-          title="Calculs effectués"
+          title="Calculs"
           value={totalCalculs}
           description="Dimensionnements"
           icon="🧮"
@@ -270,7 +277,7 @@ const Dashboard: React.FC = () => {
         />
         
         <MetricCard
-          title="Moyenne marge"
+          title="Marge moy."
           value="13.8 dB"
           description="Marge de sécurité"
           icon="📊"
@@ -278,7 +285,7 @@ const Dashboard: React.FC = () => {
         />
         
         <MetricCard
-          title="Bilan moyen"
+          title="Bilan moy."
           value="10.5 dB"
           description="Bilan de liaison"
           icon="⚖️"
@@ -286,16 +293,69 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Graphique comparatif */}
-      <Card variant="elevated">
-        <CardHeader>
-          <CardTitle>Comparatif des modules</CardTitle>
-          <CardDescription>
+      {/* Actions rapides - PRIORITÉ MOBILE */}
+      <Card className="card-mobile">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl">🚀 Actions Rapides</CardTitle>
+          <CardDescription className="text-sm">
+            Accédez rapidement aux simulations principales
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {quickActions.map((action, index) => (
+              <Link
+                key={index}
+                to={action.link}
+                className="nav-item-mobile p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-xl sm:text-2xl">{action.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{action.title}</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">{action.description}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Modules de simulation - PRIORITÉ MOBILE */}
+      <Card className="card-mobile">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl">📱 Modules de Simulation</CardTitle>
+          <CardDescription className="text-sm">
+            Vos simulations par technologie
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {metrics.map((metric, index) => (
+              <MetricCardOptimized
+                key={index}
+                title={metric.title}
+                value={metric.value}
+                icon={metric.icon}
+                variant={metric.variant}
+                link={metric.link}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Graphique comparatif - Mobile: hauteur réduite */}
+      <Card className="card-mobile">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl">📊 Comparatif des modules</CardTitle>
+          <CardDescription className="text-sm">
             Répartition des sites et NodeB par technologie
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
+          <div className="h-48 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -316,7 +376,8 @@ const Dashboard: React.FC = () => {
                     backgroundColor: 'white',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    fontSize: '12px'
                   }}
                 />
                 <Legend />
@@ -332,31 +393,31 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Historique récent */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Historique GSM</CardTitle>
-            <CardDescription>Derniers calculs effectués</CardDescription>
+      {/* Historique récent - Mobile: accordéon, Desktop: grille */}
+      <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
+        <Card className="card-mobile">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg sm:text-xl">📱 Historique GSM</CardTitle>
+            <CardDescription className="text-sm">Derniers calculs effectués</CardDescription>
           </CardHeader>
           <CardContent>
             {gsmHistory.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {gsmHistory.slice(0, 3).map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">
+                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm">
                         {item.nbAbonnes?.toLocaleString()} abonnés
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {new Date(item.date).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-primary-600">
+                    <div className="text-right ml-2">
+                      <p className="font-medium text-primary-600 text-sm">
                         {item.nbSites} sites
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {item.nbTRX} TRX
                       </p>
                     </div>
@@ -364,36 +425,36 @@ const Dashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 text-center py-4 text-sm">
                 Aucun calcul GSM récent
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Historique UMTS</CardTitle>
-            <CardDescription>Derniers calculs effectués</CardDescription>
+        <Card className="card-mobile">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg sm:text-xl">📡 Historique UMTS</CardTitle>
+            <CardDescription className="text-sm">Derniers calculs effectués</CardDescription>
           </CardHeader>
           <CardContent>
             {umtsHistory.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {umtsHistory.slice(0, 3).map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">
+                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm">
                         {item.debitTotal?.toLocaleString()} kbps
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {new Date(item.date).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-primary-600">
+                    <div className="text-right ml-2">
+                      <p className="font-medium text-primary-600 text-sm">
                         {item.nbNodeB} NodeB
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {item.nbCellules} cellules
                       </p>
                     </div>
@@ -401,110 +462,54 @@ const Dashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 text-center py-4 text-sm">
                 Aucun calcul UMTS récent
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Historique Hertzien</CardTitle>
-            <CardDescription>Derniers calculs effectués</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {hertzienHistory.length > 0 ? (
-              <div className="space-y-3">
-                {hertzienHistory.slice(0, 3).map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {item.affaiblissement?.toFixed(2)} dB
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(item.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-primary-600">
-                        {item.bilan?.toFixed(2)} dB
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Marge: {item.marge?.toFixed(2)} dB
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                Aucun calcul Hertzien récent
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Historique Optique</CardTitle>
-            <CardDescription>Derniers calculs effectués</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {optiqueHistory.length > 0 ? (
-              <div className="space-y-3">
-                {optiqueHistory.slice(0, 3).map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {item.attFibre?.toFixed(2)} dB
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(item.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-primary-600">
-                        {item.bilan?.toFixed(2)} dBm
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Pertes: {item.pertesTotales?.toFixed(2)} dB
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                Aucun calcul Optique récent
               </p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Lien vers l'Assistant IA */}
-      <div className="mt-6">
-        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl">🤖</div>
+      {/* Assistant IA - Mobile: bouton flottant, Desktop: carte */}
+      <div className="sm:mt-6">
+        <Card className="card-mobile bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="text-2xl sm:text-4xl">🤖</div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Besoin d'aide technique ?</h3>
-                  <p className="text-gray-600">Consultez notre assistant IA spécialisé en télécommunications</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Besoin d'aide technique ?</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">Consultez notre assistant IA spécialisé</p>
                 </div>
               </div>
-              <Link to="/assistant-ia">
-                <Button variant="primary" size="lg" className="flex items-center gap-2">
+              <Link to="/assistant-ia" className="w-full sm:w-auto">
+                <Button variant="primary" size="sm" className="w-full sm:w-auto form-button-mobile">
                   <span>💬</span>
-                  Ouvrir l'Assistant IA
+                  <span className="ml-2">Assistant IA</span>
                 </Button>
               </Link>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Documentation - Mobile: en bas, Desktop: visible */}
+      <Card className="card-mobile">
+        <CardContent className="p-4 sm:p-6">
+          <div className="text-center sm:text-left space-y-3">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">📚 Documentation</h3>
+            <p className="text-sm text-gray-600">
+              Consultez la documentation complète pour maîtriser tous les aspects des télécommunications.
+            </p>
+            <Link
+              to="/documentation"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors form-button-mobile"
+            >
+              📚 Voir la documentation
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Input file caché pour l'import */}
       <input
@@ -514,56 +519,6 @@ const Dashboard: React.FC = () => {
         onChange={importAllHistories}
         className="hidden"
       />
-
-      {/* Métriques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric, index) => (
-          <MetricCardOptimized
-            key={index}
-            title={metric.title}
-            value={metric.value}
-            icon={metric.icon}
-            variant={metric.variant}
-            link={metric.link}
-          />
-        ))}
-      </div>
-
-      {/* Actions rapides */}
-      <DashboardCard title="Actions Rapides" className="mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {quickActions.map((action, index) => (
-            <Link
-              key={index}
-              to={action.link}
-              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">{action.icon}</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{action.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{action.description}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </DashboardCard>
-
-      {/* Documentation */}
-      <DashboardCard title="Documentation" className="mt-8">
-        <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
-            Consultez la documentation complète pour maîtriser tous les aspects des télécommunications.
-          </p>
-          <Link
-            to="/documentation"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            📚 Voir la documentation
-          </Link>
-        </div>
-      </DashboardCard>
     </div>
   );
 };
