@@ -32,14 +32,19 @@ vi.mock('jspdf', () => ({
   })),
 }));
 
-// Mock de localStorage
+// Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
+  length: 0,
+  key: vi.fn(),
 };
-global.localStorage = localStorageMock;
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});
 
 // Mock de window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

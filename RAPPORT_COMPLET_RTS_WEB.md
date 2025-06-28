@@ -1,7 +1,39 @@
 # 📊 RAPPORT COMPLET - RTS (Radio Transmission System) - Application Web
 
-> **Note importante :**
-> Cette application est la version **démo web** de la solution RTS. Une application **desktop** (Electron) est également disponible, ainsi qu'un **site vitrine** permettant de rediriger les utilisateurs vers la démo web ou de télécharger la version desktop. L'ensemble s'inscrit dans une démarche de création d'un véritable écosystème digital pour le dimensionnement et l'analyse des réseaux télécoms.
+## 📝 Introduction du Projet
+
+L'objectif de ce projet est de concevoir et de développer un outil logiciel de dimensionnement spécifiquement dédié aux réseaux de télécommunications. Cet outil permet aux ingénieurs et opérateurs de planifier efficacement les déploiements de réseaux en tenant compte de la capacité, de la couverture, de la qualité de service et des coûts. Le projet s'inscrit dans un contexte d'évolution rapide des technologies télécoms et répond à un besoin croissant d'outils professionnels, pédagogiques et accessibles pour le dimensionnement et la planification des réseaux GSM, UMTS, Hertzien et Optique.
+
+## 🎯 Objectifs du Projet
+
+- **O1 :** Concevoir une interface utilisateur intuitive permettant la saisie des paramètres du réseau et l'affichage clair des résultats de dimensionnement.
+- **O2 :** Développer des algorithmes de dimensionnement précis pour estimer les besoins en ressources (nombre d'équipements, capacités, bilan de liaison, etc.).
+- **O3 :** Intégrer des fonctionnalités avancées pour la visualisation des résultats (graphiques, 3D) et la génération de rapports professionnels (PDF).
+
+## 🛠️ Méthodologie
+
+1. **Analyse des besoins** : Identification des exigences spécifiques pour chaque technologie (GSM, UMTS, Hertzien, Optique), recueil des paramètres clés, étude des cas d'usage réels.
+2. **Conception de l'outil** : Définition de l'architecture logicielle, conception de l'interface utilisateur (UX/UI), choix des technologies et modélisation des algorithmes de dimensionnement.
+3. **Développement** : Programmation de l'outil en React, TypeScript et technologies associées, implémentation des modules de calcul, de visualisation et d'export.
+4. **Intégration et tests** : Intégration des différentes composantes, réalisation de tests unitaires et d'intégration pour garantir la fiabilité, la robustesse et la performance de l'outil.
+5. **Application sur scénarios** : Application de l'outil sur des scénarios variés, comparaison des résultats avec des références existantes et des données réelles pour valider la pertinence des algorithmes.
+
+## 🗂️ Plan de Projet
+
+1. **Phase de Préparation** : Contexte, méthodologie, définition des besoins, planification.
+2. **Phase de Conception** : Architecture logicielle, conception de l'interface, modélisation des algorithmes.
+3. **Phase de Développement** : Implémentation des fonctionnalités, intégration des modules.
+4. **Phase de Validation** : Simulations, tests, évaluation des performances, validation par comparaison avec des cas réels.
+5. **Phase de Finalisation** : Documentation complète, livraison du logiciel, préparation des supports de présentation.
+
+## 📦 Livrables
+
+1. Un logiciel fonctionnel d'outil de dimensionnement, avec interface utilisateur moderne et fonctionnalités avancées.
+2. Un rapport détaillé décrivant l'ensemble du processus de conception, de développement, de validation et les résultats des tests réalisés.
+
+## 📚 Sources et Inspiration des Algorithmes
+
+Les algorithmes de dimensionnement implémentés s'appuient sur les cours, les TDs, la documentation technique, ainsi que sur des recherches complémentaires (littérature scientifique, normes ITU/3GPP, benchmarks industriels). Cette démarche garantit la rigueur scientifique et l'adéquation aux pratiques professionnelles du secteur.
 
 ## 🎯 Résumé Exécutif
 

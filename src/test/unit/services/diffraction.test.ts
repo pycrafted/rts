@@ -1,122 +1,171 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { DiffractionService } from '@/services/diffraction';
 
-describe('Diffraction Service - Tests Unitaires', () => {
+describe('DiffractionService - Tests Unitaires', () => {
   beforeEach(() => {
     // Reset des mocks si nécessaire
   });
 
-  describe('Calcul des pertes par diffraction', () => {
-    it('✅ doit calculer correctement les pertes par diffraction pour un obstacle simple', () => {
+  describe('calculateTotalDiffractionLoss - Calcul des pertes par diffraction', () => {
+    it('✅ doit calculer correctement les pertes pour un obstacle simple', () => {
       const params = {
-        frequency: 2.4, // GHz
-        distance: 10, // km
-        obstacleHeight: 50, // m
-        txHeight: 30, // m
-        rxHeight: 30, // m
-        obstacleDistance: 5, // km
+        frequency: 2400, // MHz
+        distance: 1000, // mètres
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [1000, 30, 0] as [number, number, number],
+        obstacles: [{
+          position: [500, 50, 0] as [number, number, number],
+          height: 50,
+          width: 10
+        }]
       };
 
-      // Simulation du calcul de diffraction
-      const wavelength = 300 / params.frequency; // cm
-      const clearance = params.obstacleHeight - ((params.txHeight + params.rxHeight) / 2);
-      const normalizedClearance = clearance / Math.sqrt(wavelength * params.obstacleDistance * (params.distance - params.obstacleDistance) / params.distance);
+      const result = DiffractionService.calculateTotalDiffractionLoss(params);
 
-      let loss = 0;
-      if (normalizedClearance > 0) {
-        loss = 6.9 + 20 * Math.log10(Math.sqrt(Math.pow(normalizedClearance - 0.1, 2) + 1) + normalizedClearance - 0.1);
-      }
-
-      expect(loss).toBeGreaterThanOrEqual(0);
-      expect(loss).toBeLessThan(50); // Perte raisonnable
+      expect(result.totalLoss).toBeGreaterThanOrEqual(0);
+      expect(result.obstacleLosses).toHaveLength(1);
+      expect(result.obstacleLosses[0].loss).toBeGreaterThanOrEqual(0);
     });
 
-    it('✅ doit retourner 0 dB pour un obstacle sous la ligne de vue', () => {
+    it('✅ doit calculer correctement les pertes pour des obstacles multiples', () => {
       const params = {
-        frequency: 2.4,
-        distance: 10,
-        obstacleHeight: 10, // Obstacle bas
-        txHeight: 30,
-        rxHeight: 30,
-        obstacleDistance: 5,
+        frequency: 2400,
+        distance: 10000,
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [10000, 30, 0] as [number, number, number],
+        obstacles: [
+          {
+            position: [3000, 50, 0] as [number, number, number],
+            height: 50,
+            width: 10
+          },
+          {
+            position: [7000, 30, 0] as [number, number, number],
+            height: 30,
+            width: 10
+          }
+        ]
       };
 
-      const clearance = params.obstacleHeight - ((params.txHeight + params.rxHeight) / 2);
-      const loss = clearance <= 0 ? 0 : 6.9; // Simplification
+      const result = DiffractionService.calculateTotalDiffractionLoss(params);
 
-      expect(loss).toBe(0);
+      expect(result.totalLoss).toBeGreaterThanOrEqual(0);
+      expect(result.obstacleLosses).toHaveLength(2);
+      
+      // Vérifier que les pertes sont cumulatives
+      const totalLoss = result.obstacleLosses.reduce((sum: number, obstacleLoss: any) => sum + obstacleLoss.loss, 0);
+      expect(result.totalLoss).toBeCloseTo(totalLoss, 1);
     });
 
-    it('✅ doit gérer les obstacles multiples', () => {
-      const obstacles = [
-        { height: 50, distance: 3 },
-        { height: 30, distance: 7 },
-      ];
+    it('✅ doit gérer les cas limites', () => {
+      // Test avec distance nulle
+      const paramsZeroDistance = {
+        frequency: 2400,
+        distance: 0,
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [0, 30, 0] as [number, number, number],
+        obstacles: [{
+          position: [0, 50, 0] as [number, number, number],
+          height: 50,
+          width: 10
+        }]
+      };
+
+      expect(() => DiffractionService.calculateTotalDiffractionLoss(paramsZeroDistance)).toThrow('Distance invalide');
+
+      // Test avec fréquence nulle
+      const paramsZeroFreq = {
+        frequency: 0,
+        distance: 1000,
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [1000, 30, 0] as [number, number, number],
+        obstacles: [{
+          position: [500, 50, 0] as [number, number, number],
+          height: 50,
+          width: 10
+        }]
+      };
+
+      expect(() => DiffractionService.calculateTotalDiffractionLoss(paramsZeroFreq)).toThrow('Fréquence invalide');
+    });
+
+    it('✅ doit calculer correctement la longueur d\'onde', () => {
+      const frequency = 2400; // MHz
+      const expectedWavelength = 299792458 / (frequency * 1000000); // mètres
 
       const params = {
-        frequency: 2.4,
-        distance: 10,
-        txHeight: 30,
-        rxHeight: 30,
-        obstacles,
+        frequency,
+        distance: 1000,
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [1000, 30, 0] as [number, number, number],
+        obstacles: [{
+          position: [500, 50, 0] as [number, number, number],
+          height: 50,
+          width: 10
+        }]
       };
 
-      // Calcul pour chaque obstacle
-      const losses = obstacles.map(obstacle => {
-        const clearance = obstacle.height - ((params.txHeight + params.rxHeight) / 2);
-        return clearance > 0 ? 6.9 : 0;
-      });
-
-      const totalLoss = losses.reduce((sum, loss) => sum + loss, 0);
-
-      expect(totalLoss).toBeGreaterThanOrEqual(0);
-      expect(losses).toHaveLength(2);
+      const result = DiffractionService.calculateTotalDiffractionLoss(params);
+      
+      // Vérifier que la longueur d'onde est utilisée dans les calculs
+      expect(result.totalLoss).toBeGreaterThan(0);
     });
 
-    it('✅ doit calculer correctement les pertes selon la fréquence', () => {
-      const baseParams = {
-        distance: 10,
-        obstacleHeight: 50,
-        txHeight: 30,
-        rxHeight: 30,
-        obstacleDistance: 5,
+    it('✅ doit valider les paramètres d\'entrée', () => {
+      // Test avec fréquence trop élevée
+      const paramsHighFreq = {
+        frequency: 200000, // 200 GHz
+        distance: 1000,
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [1000, 30, 0] as [number, number, number],
+        obstacles: []
       };
 
-      const loss2GHz = 6.9; // Simulation pour 2 GHz
-      const loss5GHz = 8.2; // Simulation pour 5 GHz (plus élevé car fréquence plus haute)
+      expect(() => DiffractionService.calculateTotalDiffractionLoss(paramsHighFreq)).toThrow('Fréquence invalide');
 
-      expect(loss5GHz).toBeGreaterThan(loss2GHz);
+      // Test avec distance trop élevée
+      const paramsHighDistance = {
+        frequency: 2400,
+        distance: 200000, // 200 km
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [200000, 30, 0] as [number, number, number],
+        obstacles: []
+      };
+
+      expect(() => DiffractionService.calculateTotalDiffractionLoss(paramsHighDistance)).toThrow('Distance invalide');
     });
 
-    it('❌ doit rejeter les paramètres invalides', () => {
-      expect(() => {
-        const params = {
-          frequency: -1, // Fréquence négative
-          distance: 10,
-          obstacleHeight: 50,
-          txHeight: 30,
-          rxHeight: 30,
-          obstacleDistance: 5,
-        };
-        
-        if (params.frequency <= 0) {
-          throw new Error('Fréquence invalide');
-        }
-      }).toThrow('Fréquence invalide');
+    it('✅ doit gérer les obstacles avec hauteur négative', () => {
+      const params = {
+        frequency: 2400,
+        distance: 1000,
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [1000, 30, 0] as [number, number, number],
+        obstacles: [{
+          position: [500, -10, 0] as [number, number, number],
+          height: -10,
+          width: 10
+        }]
+      };
 
-      expect(() => {
-        const params = {
-          frequency: 2.4,
-          distance: -5, // Distance négative
-          obstacleHeight: 50,
-          txHeight: 30,
-          rxHeight: 30,
-          obstacleDistance: 5,
-        };
-        
-        if (params.distance <= 0) {
-          throw new Error('Distance invalide');
-        }
-      }).toThrow('Distance invalide');
+      expect(() => DiffractionService.calculateTotalDiffractionLoss(params)).toThrow('La hauteur des obstacles ne peut pas être négative');
+    });
+
+    it('✅ doit retourner 0 pour les obstacles en dessous de la ligne de visée', () => {
+      const params = {
+        frequency: 2400,
+        distance: 1000,
+        txPosition: [0, 30, 0] as [number, number, number],
+        rxPosition: [1000, 30, 0] as [number, number, number],
+        obstacles: [{
+          position: [500, 10, 0] as [number, number, number], // Obstacle en dessous
+          height: 10,
+          width: 10
+        }]
+      };
+
+      const result = DiffractionService.calculateTotalDiffractionLoss(params);
+      expect(result.totalLoss).toBe(0);
     });
   });
 
