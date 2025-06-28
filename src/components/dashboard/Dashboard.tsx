@@ -198,7 +198,14 @@ const Dashboard: React.FC = () => {
       icon: "🔌",
       variant: "error" as const,
       link: "/optique"
-    }
+    },
+    {
+      title: "Tests Réussis",
+      value: "38/38",
+      icon: "🧪",
+      variant: "success" as const,
+      link: "/tests"
+    },
   ], []);
 
   // Mémoriser les sections rapides

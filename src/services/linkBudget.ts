@@ -16,7 +16,7 @@
 /**
  * Interface définissant les paramètres du bilan de liaison
  */
-interface LinkBudgetParams {
+export interface LinkBudgetParams {
   frequency: number; // MHz
   distance: number; // mètres
   txPower: number; // dBm
@@ -34,13 +34,47 @@ interface LinkBudgetParams {
 /**
  * Interface définissant les résultats du bilan de liaison
  */
-interface LinkBudgetResult {
+export interface LinkBudgetResult {
   freeSpaceLoss: number;
+  atmosphericLoss: number;
   totalLoss: number;
   totalGain: number;
   receivedPower: number;
   systemMargin: number;
   availability: number;
+}
+
+export interface FresnelZoneParams {
+  frequency: number; // MHz
+  distance: number; // mètres
+  obstacleHeight?: number; // mètres
+  obstacleDistance?: number; // mètres depuis l'émetteur
+}
+
+export interface FresnelZoneResult {
+  radius: number; // mètres
+  clearance: number; // mètres
+  clearancePercentage: number; // %
+}
+
+export interface DiffractionParams {
+  frequency: number; // MHz
+  distance: number; // mètres
+  obstacleHeight: number; // mètres
+  obstacleDistance: number; // mètres depuis l'émetteur
+  txHeight: number; // mètres
+  rxHeight: number; // mètres
+  obstacles?: Array<{
+    height: number;
+    distance: number;
+  }>;
+}
+
+export interface DiffractionResult {
+  loss: number; // dB
+  totalLoss?: number; // dB pour obstacles multiples
+  clearance: number; // mètres
+  clearancePercentage: number; // %
 }
 
 interface Point2D {
@@ -126,6 +160,7 @@ export class LinkBudgetService {
 
     return {
       freeSpaceLoss,
+      atmosphericLoss,
       totalLoss,
       totalGain,
       receivedPower,
@@ -181,4 +216,96 @@ export class LinkBudgetService {
     // Formule de Barnett-Vignant
     return factor * Math.pow(freqGHz, 0.5) * Math.pow(distance, 1.5) * (1 - reliability / 100);
   }
+}
+
+// Fonctions exportées pour les tests
+export function calculateLinkBudget(params: LinkBudgetParams): LinkBudgetResult {
+  return LinkBudgetService.calculateLinkBudget(params);
+}
+
+export function calculateFresnelZone(params: FresnelZoneParams): FresnelZoneResult {
+  const { frequency, distance, obstacleHeight = 0, obstacleDistance = distance / 2 } = params;
+  
+  const d1 = obstacleDistance;
+  const d2 = distance - obstacleDistance;
+  const radius = LinkBudgetService['calculateFirstFresnelRadius'](frequency, d1, d2);
+  
+  // Calcul du dégagement
+  const clearance = radius - obstacleHeight;
+  const clearancePercentage = (clearance / radius) * 100;
+  
+  return {
+    radius,
+    clearance: Math.max(0, clearance),
+    clearancePercentage: Math.max(0, clearancePercentage)
+  };
+}
+
+export function calculateDiffractionLoss(params: DiffractionParams): DiffractionResult {
+  const { frequency, distance, obstacleHeight, obstacleDistance, txHeight, rxHeight, obstacles } = params;
+  
+  // Si pas d'obstacles multiples, calcul simple
+  if (!obstacles || obstacles.length === 0) {
+    const fresnelResult = calculateFresnelZone({
+      frequency,
+      distance,
+      obstacleHeight,
+      obstacleDistance
+    });
+    
+    // Si l'obstacle est sous la ligne de vue, pas de perte
+    if (fresnelResult.clearance >= 0) {
+      return {
+        loss: 0,
+        clearance: fresnelResult.clearance,
+        clearancePercentage: fresnelResult.clearancePercentage
+      };
+    }
+    
+    // Calcul de la perte par diffraction selon le modèle ITU-R
+    const h = Math.abs(fresnelResult.clearance);
+    const wavelength = 299792458 / (frequency * 1e6);
+    const d1 = obstacleDistance;
+    const d2 = distance - obstacleDistance;
+    
+    // Paramètre de diffraction
+    const v = h * Math.sqrt(2 * (d1 + d2) / (wavelength * d1 * d2));
+    
+    // Perte par diffraction (formule simplifiée)
+    let loss = 0;
+    if (v > 0) {
+      loss = 6.9 + 20 * Math.log10(Math.sqrt(Math.pow(v - 0.1, 2) + 1) + v - 0.1);
+    }
+    
+    return {
+      loss: Math.max(0, loss),
+      clearance: fresnelResult.clearance,
+      clearancePercentage: fresnelResult.clearancePercentage
+    };
+  }
+  
+  // Calcul pour obstacles multiples
+  let totalLoss = 0;
+  let minClearance = Infinity;
+  
+  for (const obstacle of obstacles) {
+    const result = calculateDiffractionLoss({
+      frequency,
+      distance,
+      obstacleHeight: obstacle.height,
+      obstacleDistance: obstacle.distance,
+      txHeight,
+      rxHeight
+    });
+    
+    totalLoss += result.loss;
+    minClearance = Math.min(minClearance, result.clearance);
+  }
+  
+  return {
+    loss: 0, // Perte individuelle (non utilisée pour obstacles multiples)
+    totalLoss,
+    clearance: Math.max(0, minClearance),
+    clearancePercentage: minClearance > 0 ? 100 : 0
+  };
 } 

@@ -49,6 +49,12 @@ const navigation = [
     icon: '🖥️',
     description: 'Simulations 3D'
   },
+  {
+    name: 'Tests',
+    href: '/tests',
+    icon: '🧪',
+    description: 'Résultats des tests'
+  },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {

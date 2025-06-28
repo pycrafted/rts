@@ -29,6 +29,7 @@ const HertzienSimulation = lazy(() => import('./pages/HertzienSimulation'));
 const GSMCoverageDemo = lazy(() => import('./components/gsm/GSMCoverageDemo'));
 const UMTSSimulation = lazy(() => import('./pages/UMTSSimulation'));
 const AssistantIAPage = lazy(() => import('./pages/AssistantIAPage'));
+const TestResults = lazy(() => import('./pages/TestResults'));
 
 // Composant de chargement optimisé
 const LoadingSpinner = () => (
@@ -57,6 +58,7 @@ const App: React.FC = () => {
               <Route path="/simulation/gsm" element={<GSMCoverageDemo />} />
               <Route path="/simulation/umts" element={<UMTSSimulation />} />
               <Route path="/documentation" element={<Documentation />} />
+              <Route path="/tests" element={<TestResults />} />
             </Routes>
           </Suspense>
           

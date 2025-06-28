@@ -272,11 +272,11 @@ const GSMForm: React.FC<{ onSubmit?: (values: GSMFormValues) => void }> = ({ onS
         </div>
         <h2 className="text-2xl font-bold text-primary-dark mb-2">Dimensionnement GSM</h2>
         <div className="mb-4">
-          <label className="block text-sm font-semibold mb-1 text-gray-700 flex items-center gap-1 group cursor-pointer">
+          <label htmlFor="scenario" className="block text-sm font-semibold mb-1 text-gray-700 flex items-center gap-1 group cursor-pointer">
             Scénario prédéfini
             <InfoBulle content={"Choisissez un scénario pour pré-remplir les champs avec des valeurs types."} className="group-hover:underline group-hover:text-primary-dark" />
           </label>
-          <select value={scenario} onChange={handleScenarioChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary outline-none">
+          <select id="scenario" value={scenario} onChange={handleScenarioChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-light focus:border-primary outline-none">
             <option value="">Choisir un scénario</option>
             <option value="urbain">Zone urbaine</option>
             <option value="rural">Zone rurale</option>
@@ -299,11 +299,12 @@ const GSMForm: React.FC<{ onSubmit?: (values: GSMFormValues) => void }> = ({ onS
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Zone de couverture */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+            <label htmlFor="area" className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
               Zone de couverture (km²)
               <InfoBulle content={pedagogicHelp.area.why + ' ' + pedagogicHelp.area.example} className="group-hover:underline group-hover:text-primary-dark" />
             </label>
             <input
+              id="area"
               type="number"
               name="area"
               value={values.area}
@@ -318,11 +319,12 @@ const GSMForm: React.FC<{ onSubmit?: (values: GSMFormValues) => void }> = ({ onS
           
           {/* Densité de population */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+            <label htmlFor="density" className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
               Densité de population (hab/km²)
               <InfoBulle content={pedagogicHelp.density.why + ' ' + pedagogicHelp.density.example} className="group-hover:underline group-hover:text-primary-dark" />
             </label>
             <input
+              id="density"
               type="number"
               name="density"
               value={values.density}
@@ -337,11 +339,12 @@ const GSMForm: React.FC<{ onSubmit?: (values: GSMFormValues) => void }> = ({ onS
           
           {/* Trafic par abonné */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+            <label htmlFor="trafficPerUser" className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
               Trafic par abonné (mErlang)
               <InfoBulle content={pedagogicHelp.trafficPerUser.why + ' ' + pedagogicHelp.trafficPerUser.example} className="group-hover:underline group-hover:text-primary-dark" />
             </label>
             <input
+              id="trafficPerUser"
               type="number"
               name="trafficPerUser"
               value={values.trafficPerUser}
@@ -356,11 +359,12 @@ const GSMForm: React.FC<{ onSubmit?: (values: GSMFormValues) => void }> = ({ onS
           
           {/* Taux de pénétration */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+            <label htmlFor="penetration" className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
               Taux de pénétration (%)
               <InfoBulle content={pedagogicHelp.penetration.why + ' ' + pedagogicHelp.penetration.example} className="group-hover:underline group-hover:text-primary-dark" />
             </label>
             <input
+              id="penetration"
               type="number"
               name="penetration"
               value={values.penetration}
@@ -375,11 +379,12 @@ const GSMForm: React.FC<{ onSubmit?: (values: GSMFormValues) => void }> = ({ onS
           
           {/* Facteur d'activité */}
           <div className="space-y-1 md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
+            <label htmlFor="activity" className="block text-sm font-medium text-gray-700 flex items-center gap-1 group cursor-pointer">
               Facteur d'activité
               <InfoBulle content={pedagogicHelp.activity.why + ' ' + pedagogicHelp.activity.example} className="group-hover:underline group-hover:text-primary-dark" />
             </label>
             <input
+              id="activity"
               type="number"
               name="activity"
               value={values.activity}
