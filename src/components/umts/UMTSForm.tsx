@@ -130,7 +130,7 @@ const termesUMTS = [
   { id: 'planification_frequence', terme: 'Planification de fréquences', definition: "Répartition des canaux radio pour éviter les interférences entre cellules adjacentes.", exemple: 'Utilise des motifs de réutilisation de fréquences.' }
 ];
 
-const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ onSubmit }) => {
+const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void; onSave?: () => void }> = ({ onSubmit, onSave }) => {
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<Partial<UMTSFormValues>>({});
   const [showResults, setShowResults] = useState(false);
@@ -141,63 +141,6 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
-  };
-
-  const getDynamicComment = (field: keyof UMTSFormValues) => {
-    const v = values[field];
-    if (!v) return pedagogicHelp[field].short + ' ' + pedagogicHelp[field].example;
-    const num = Number(v);
-    if (isNaN(num)) return "Veuillez entrer une valeur numérique.";
-    
-    // Exemples de feedback pédagogique amélioré
-    if (field === 'area') {
-      if (num < 1) return "Très petite zone (campus, site industriel).";
-      if (num < 5) return "Petite zone (quartier, centre-ville).";
-      if (num < 20) return "Zone moyenne (ville moyenne).";
-      if (num < 100) return "Grande zone (agglomération).";
-      return "Très grande zone (région, département).";
-    }
-    
-    if (field === 'users') {
-      if (num < 100) return "Peu d'utilisateurs, faible trafic.";
-      if (num < 500) return "Nombre d'utilisateurs modéré.";
-      if (num < 2000) return "Nombre d'utilisateurs courant.";
-      if (num < 10000) return "Beaucoup d'utilisateurs, attention à la capacité.";
-      return "Très nombreux utilisateurs, forte sollicitation du réseau.";
-    }
-    
-    if (field === 'voice') {
-      if (num < 8) return "Débit voix très faible, qualité dégradée.";
-      if (num < 12) return "Débit voix faible, qualité acceptable.";
-      if (num < 16) return "Débit voix standard (AMR).";
-      return "Débit voix élevé, bonne qualité mais plus de ressources nécessaires.";
-    }
-    
-    if (field === 'data') {
-      if (num < 64) return "Débit data faible, usage basique (browsing).";
-      if (num < 128) return "Débit data modéré, usage standard.";
-      if (num < 384) return "Débit data élevé, usage intensif.";
-      if (num < 1000) return "Débit data très élevé, usage professionnel.";
-      return "Débit data extrême, attention à la capacité réseau.";
-    }
-    
-    if (field === 'video') {
-      if (num < 64) return "Débit vidéo faible, qualité basse.";
-      if (num < 128) return "Débit vidéo modéré, qualité acceptable.";
-      if (num < 256) return "Débit vidéo standard, bonne qualité.";
-      if (num < 512) return "Débit vidéo élevé, très bonne qualité.";
-      return "Débit vidéo très élevé, qualité HD, attention à la bande passante.";
-    }
-    
-    if (field === 'load') {
-      if (num < 30) return "Facteur de charge très faible, réseau sous-utilisé.";
-      if (num < 50) return "Facteur de charge faible, marge importante.";
-      if (num < 70) return "Facteur de charge optimal (60-70%).";
-      if (num < 85) return "Facteur de charge élevé, surveillance requise.";
-      return "Facteur de charge très élevé, risque de saturation.";
-    }
-    
-    return '';
   };
 
   const validate = () => {
@@ -289,13 +232,13 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
   return (
     <>
       <Glossaire open={showGlossaire} onClose={() => setShowGlossaire(false)} focusId={glossaireFocus} termes={termesUMTS} />
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg space-y-6 mt-8 border border-blue-100">
+      <form onSubmit={handleSubmit} className="w-full bg-white p-8 rounded-2xl shadow-lg space-y-6">
         <div className="flex justify-end mb-2">
-          <button type="button" onClick={() => setShowGlossaire(true)} className="flex items-center gap-2 text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-light">
+          <button type="button" onClick={() => setShowGlossaire(true)} className="flex items-center gap-2 text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
             <span role="img" aria-label="Glossaire">📖</span> Glossaire
           </button>
         </div>
-        <h2 className="text-2xl font-bold text-primary-dark mb-2">Dimensionnement UMTS</h2>
+        
         <div className="mb-4">
           <label className="block text-sm font-semibold mb-1 text-gray-700 flex items-center gap-1 group cursor-pointer">
             Scénario prédéfini
@@ -315,10 +258,10 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
             <option value="zone_ruraux_avances">Zone rurale avancée</option>
           </select>
         </div>
-        <button onClick={handleFillExample} className="mb-2 bg-success-light text-success-dark px-4 py-2 rounded-lg text-sm font-semibold hover:bg-success transition-colors w-full focus:outline-none focus:ring-2 focus:ring-success-light flex items-center gap-2">
-          <span role="img" aria-label="Exemple">✨</span> Remplir avec un exemple
+        <button onClick={handleFillExample} className="w-full bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors mb-4">
+          ✨ Remplir avec un exemple
         </button>
-        {exampleMsg && <div className="mb-2 text-xs text-success-dark bg-success-light/40 rounded px-3 py-2">{exampleMsg}</div>}
+        {exampleMsg && <div className="mb-4 text-sm text-green-700 bg-green-100 rounded px-3 py-2">{exampleMsg}</div>}
         
         {/* Grille de champs de saisie */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -335,10 +278,8 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
               onChange={handleChange}
               aria-invalid={!!errors.area}
               className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.area ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-              placeholder="Ex : 10"
             />
             {errors.area && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.area}</span>}
-            <div className="text-xs text-gray-500">{getDynamicComment('area')}</div>
           </div>
           
           {/* Nombre d'utilisateurs */}
@@ -354,10 +295,8 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
               onChange={handleChange}
               aria-invalid={!!errors.users}
               className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.users ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-              placeholder="Ex : 2000"
             />
             {errors.users && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.users}</span>}
-            <div className="text-xs text-gray-500">{getDynamicComment('users')}</div>
           </div>
           
           {/* Débit voix */}
@@ -373,10 +312,8 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
               onChange={handleChange}
               aria-invalid={!!errors.voice}
               className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.voice ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-              placeholder="Ex : 12.2"
             />
             {errors.voice && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.voice}</span>}
-            <div className="text-xs text-gray-500">{getDynamicComment('voice')}</div>
           </div>
           
           {/* Débit data */}
@@ -392,10 +329,8 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
               onChange={handleChange}
               aria-invalid={!!errors.data}
               className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.data ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-              placeholder="Ex : 128"
             />
             {errors.data && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.data}</span>}
-            <div className="text-xs text-gray-500">{getDynamicComment('data')}</div>
           </div>
           
           {/* Débit vidéo */}
@@ -411,10 +346,8 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
               onChange={handleChange}
               aria-invalid={!!errors.video}
               className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.video ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-              placeholder="Ex : 256"
             />
             {errors.video && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.video}</span>}
-            <div className="text-xs text-gray-500">{getDynamicComment('video')}</div>
           </div>
           
           {/* Facteur de charge */}
@@ -430,15 +363,13 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
               onChange={handleChange}
               aria-invalid={!!errors.load}
               className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors ${errors.load ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-              placeholder="Ex : 60"
             />
             {errors.load && <span className="text-red-600 text-xs flex items-center gap-1"><span role="img" aria-label="Erreur">⚠️</span>{errors.load}</span>}
-            <div className="text-xs text-gray-500">{getDynamicComment('load')}</div>
           </div>
         </div>
         
-        <button type="submit" className="w-full bg-primary text-white px-4 py-2 rounded-lg font-semibold text-lg mt-4 hover:bg-primary-dark transition-colors shadow focus:outline-none focus:ring-2 focus:ring-primary-light flex items-center gap-2">
-          <span role="img" aria-label="Calculer">🧮</span> Calculer
+        <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors shadow">
+          🧮 Calculer
         </button>
         {showResults && (
           <div className="mt-8">
@@ -449,6 +380,7 @@ const UMTSForm: React.FC<{ onSubmit?: (values: UMTSFormValues) => void }> = ({ o
               data={Number(values.data)}
               video={Number(values.video)}
               load={Number(values.load)}
+              onSave={onSave}
             />
           </div>
         )}

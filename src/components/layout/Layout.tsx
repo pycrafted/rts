@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { PerformanceMonitor } from '../common/PerformanceMonitor';
+// import { PerformanceMonitor } from '../common/PerformanceMonitor';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -91,8 +91,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </main>
       </div>
 
-      {/* Performance Monitor - seulement en mode développement ou si activé */}
-      <PerformanceMonitor showDetails={process.env.NODE_ENV === 'development'} />
+      {/* Performance Monitor - DÉSACTIVÉ pour corriger le problème de souris */}
+      {/* <PerformanceMonitor showDetails={process.env.NODE_ENV === 'development'} /> */}
     </div>
   );
 };

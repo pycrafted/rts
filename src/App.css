@@ -1,1 +1,60 @@
 /* Ce fichier est volontairement laissé vide. Utilisez Tailwind pour tout le style global. */
+
+/* Styles globaux pour garantir la cohérence entre navigateurs */
+
+/* Reset des hauteurs pour éviter les variations entre navigateurs */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Garantir que les conteneurs de simulation utilisent tout l'espace disponible */
+.simulation-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Styles pour les canvas 3D */
+canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Correction pour les calculs de hauteur sur différents navigateurs */
+.simulation-view {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Garantir que les panneaux flottants ne dépassent pas */
+.floating-panel {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+/* Correction pour les modales mobiles */
+.mobile-modal {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Styles pour éviter les problèmes de scroll sur mobile */
+@media (max-width: 640px) {
+  .simulation-container {
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+/* Correction pour les navigateurs qui ne supportent pas bien calc() */
+@supports not (height: calc(100vh - 100px)) {
+  .simulation-container {
+    height: 100%;
+  }
+}

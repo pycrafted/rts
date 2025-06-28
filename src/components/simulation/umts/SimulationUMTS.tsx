@@ -7,6 +7,7 @@ import { LoadFactorPanel } from './LoadFactorPanel';
 import { PerformanceMonitor } from './PerformanceMonitor';
 import { AutoOptimizer } from './AutoOptimizer';
 import { useUMTSSimulationStore } from './useUMTSSimulationStore';
+import { usePDFExport } from '@/services/pdfExportService';
 
 export const SimulationUMTS: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -20,6 +21,8 @@ export const SimulationUMTS: React.FC = () => {
     showHandovers,
     updateResults
   } = useUMTSSimulationStore();
+
+  const { exportDashboardReport } = usePDFExport();
 
   // Initialiser les résultats au montage - optimisé avec useCallback
   const initializeSimulation = useCallback(async () => {
@@ -173,6 +176,110 @@ export const SimulationUMTS: React.FC = () => {
     </div>
   );
 
+  // Fonction d'export PDF
+  const handleExportPDF = async () => {
+    try {
+      console.log('📊 Export PDF complet en cours...');
+      
+      // Récupérer toutes les données du dashboard
+      const gsmHistory = JSON.parse(localStorage.getItem('gsm_history') || '[]');
+      const umtsHistory = JSON.parse(localStorage.getItem('umts_history') || '[]');
+      const hertzienHistory = JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+      const optiqueHistory = JSON.parse(localStorage.getItem('optique_history') || '[]');
+
+      // Calculer les métriques globales
+      const totalGsmCalculs = gsmHistory.length;
+      const totalUmtsCalculs = umtsHistory.length;
+      const totalHertzienCalculs = hertzienHistory.length;
+      const totalOptiqueCalculs = optiqueHistory.length;
+
+      const totalGsmDistance = gsmHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalUmtsDistance = umtsHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalHertzienDistance = hertzienHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalOptiqueDistance = optiqueHistory.reduce((sum: number, item: any) => sum + (item.params?.length || 0), 0);
+
+      const totalGsmMarge = gsmHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalUmtsMarge = umtsHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalHertzienMarge = hertzienHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalOptiqueMarge = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const totalGsmBilan = gsmHistory.reduce((sum: number, item: any) => sum + (item.nbSites || 0), 0);
+      const totalUmtsBilan = umtsHistory.reduce((sum: number, item: any) => sum + (item.nbNodeB || 0), 0);
+      const totalHertzienBilan = hertzienHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalOptiqueBilan = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const allData = {
+        gsm: {
+          history: gsmHistory,
+          metrics: {
+            totalCalculs: totalGsmCalculs,
+            totalDistance: totalGsmDistance,
+            totalMarge: totalGsmMarge,
+            totalBilan: totalGsmBilan,
+            moyenneDistance: totalGsmCalculs > 0 ? totalGsmDistance / totalGsmCalculs : 0,
+            moyenneMarge: totalGsmCalculs > 0 ? totalGsmMarge / totalGsmCalculs : 0,
+            moyenneBilan: totalGsmCalculs > 0 ? totalGsmBilan / totalGsmCalculs : 0
+          }
+        },
+        umts: {
+          history: umtsHistory,
+          metrics: {
+            totalCalculs: totalUmtsCalculs,
+            totalDistance: totalUmtsDistance,
+            totalMarge: totalUmtsMarge,
+            totalBilan: totalUmtsBilan,
+            moyenneDistance: totalUmtsCalculs > 0 ? totalUmtsDistance / totalUmtsCalculs : 0,
+            moyenneMarge: totalUmtsCalculs > 0 ? totalUmtsMarge / totalUmtsCalculs : 0,
+            moyenneBilan: totalUmtsCalculs > 0 ? totalUmtsBilan / totalUmtsCalculs : 0
+          }
+        },
+        hertzien: {
+          history: hertzienHistory,
+          metrics: {
+            totalCalculs: totalHertzienCalculs,
+            totalDistance: totalHertzienDistance,
+            totalMarge: totalHertzienMarge,
+            totalBilan: totalHertzienBilan,
+            moyenneDistance: totalHertzienCalculs > 0 ? totalHertzienDistance / totalHertzienCalculs : 0,
+            moyenneMarge: totalHertzienCalculs > 0 ? totalHertzienMarge / totalHertzienCalculs : 0,
+            moyenneBilan: totalHertzienCalculs > 0 ? totalHertzienBilan / totalHertzienCalculs : 0
+          }
+        },
+        optique: {
+          history: optiqueHistory,
+          metrics: {
+            totalCalculs: totalOptiqueCalculs,
+            totalDistance: totalOptiqueDistance,
+            totalMarge: totalOptiqueMarge,
+            totalBilan: totalOptiqueBilan,
+            moyenneDistance: totalOptiqueCalculs > 0 ? totalOptiqueDistance / totalOptiqueCalculs : 0,
+            moyenneMarge: totalOptiqueCalculs > 0 ? totalOptiqueMarge / totalOptiqueCalculs : 0,
+            moyenneBilan: totalOptiqueCalculs > 0 ? totalOptiqueBilan / totalOptiqueCalculs : 0
+          }
+        },
+        global: {
+          totalCalculs: totalGsmCalculs + totalUmtsCalculs + totalHertzienCalculs + totalOptiqueCalculs,
+          totalDistance: totalGsmDistance + totalUmtsDistance + totalHertzienDistance + totalOptiqueDistance,
+          totalMarge: totalGsmMarge + totalUmtsMarge + totalHertzienMarge + totalOptiqueMarge,
+          totalBilan: totalGsmBilan + totalUmtsBilan + totalHertzienBilan + totalOptiqueBilan
+        }
+      };
+
+      const result = await exportDashboardReport(allData);
+      
+      if (result.success) {
+        console.log('✅ Export PDF réussi:', result.filePath);
+        alert(`PDF exporté avec succès !\nFichier: ${result.filePath}`);
+      } else {
+        console.error('❌ Échec de l\'export PDF:', result.error);
+        alert(`Erreur lors de l'export PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF. Vérifiez la console pour plus de détails.');
+    }
+  };
+
   // Afficher le loader pendant le chargement
   if (isLoading) {
     return <LoadingScreen />;
@@ -288,12 +395,21 @@ export const SimulationUMTS: React.FC = () => {
         <div className="absolute top-4 left-4 bg-slate-800 bg-opacity-90 rounded-lg p-4 shadow-lg max-w-sm border border-slate-700 opacity-20 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-white">📡 Simulation UMTS</h3>
-            <button
-              onClick={() => setShowHelp(!showHelp)}
-              className="text-blue-400 hover:text-blue-300 text-sm"
-            >
-              {showHelp ? 'Masquer' : 'Aide'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportPDF}
+                className="text-blue-400 hover:text-blue-300 text-sm px-2 py-1 bg-blue-900 bg-opacity-50 rounded"
+                title="Exporter le rapport PDF"
+              >
+                📊 Export
+              </button>
+              <button
+                onClick={() => setShowHelp(!showHelp)}
+                className="text-blue-400 hover:text-blue-300 text-sm"
+              >
+                {showHelp ? 'Masquer' : 'Aide'}
+              </button>
+            </div>
           </div>
           
           {showHelp ? (

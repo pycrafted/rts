@@ -5,6 +5,7 @@
  * - La visualisation 3D de la fibre optique
  * - Le calcul du bilan de liaison
  * - L'affichage des contrôles et du graphique d'atténuation
+ * - La sauvegarde automatique des paramètres
  * 
  * @component
  */
@@ -19,6 +20,7 @@ import OptiqueControls from '@/components/optique/simulation/OptiqueControls';
 import OptiqueAdvancedControls from '@/components/optique/simulation/OptiqueAdvancedControls';
 import OptiqueDefects from '@/components/optique/simulation/OptiqueDefects';
 import OptiqueMaintenance from '@/components/optique/simulation/OptiqueMaintenance';
+import { usePDFExport } from '@/services/pdfExportService';
 
 /**
  * Interface définissant la structure des résultats du bilan de liaison
@@ -40,6 +42,60 @@ interface Defect {
   position: number;
   severity: number;
 }
+
+// Interface pour les paramètres de simulation optique
+interface OptiqueSimulationParams {
+  fiberLength: number;
+  splices: Array<{position: number}>;
+  connectors: Array<{position: number}>;
+  attenuation: number;
+  fiberType: 'monomode' | 'multimode';
+  wavelength: number;
+  temperature: number;
+  dispersion: number;
+  showCrossSection: boolean;
+  defects: Defect[];
+}
+
+// Fonction pour sauvegarder les paramètres de simulation
+const saveOptiqueParams = async (params: OptiqueSimulationParams) => {
+  try {
+    const { ElectronService } = await import('@/services/electronService');
+    const electronService = ElectronService.getInstance();
+    
+    if (electronService.isAvailable()) {
+      const { DesktopStorage } = await import('@/services/desktopStorage');
+      const storage = DesktopStorage.getInstance();
+      await storage.saveOptiqueSimulationParams(params);
+    } else {
+      // Fallback vers localStorage en mode web
+      localStorage.setItem('optique_simulation_params', JSON.stringify(params));
+    }
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde des paramètres optique:', error);
+  }
+};
+
+// Fonction pour charger les paramètres de simulation
+const loadOptiqueParams = async (): Promise<Partial<OptiqueSimulationParams> | null> => {
+  try {
+    const { ElectronService } = await import('@/services/electronService');
+    const electronService = ElectronService.getInstance();
+    
+    if (electronService.isAvailable()) {
+      const { DesktopStorage } = await import('@/services/desktopStorage');
+      const storage = DesktopStorage.getInstance();
+      return await storage.getOptiqueSimulationParams();
+    } else {
+      // Fallback vers localStorage en mode web
+      const savedParams = localStorage.getItem('optique_simulation_params');
+      return savedParams ? JSON.parse(savedParams) : null;
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des paramètres optique:', error);
+    return null;
+  }
+};
 
 const FloatingPanel = ({ title, children }: { title: string, children: React.ReactNode }) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -145,6 +201,8 @@ const CollapsibleGraphPanel = ({ title, children }: { title: string, children: R
 };
 
 const OptiqueSimulationView: React.FC = () => {
+  const { exportDashboardReport } = usePDFExport();
+
   // États de base
   const [fiberLength, setFiberLength] = useState(20);  // Longueur de la fibre en km
   const [splices, setSplices] = useState<Array<{position: number}>>([]);  // Liste des épissures
@@ -181,6 +239,50 @@ const OptiqueSimulationView: React.FC = () => {
   const CONNECTOR_LOSS = 0.5;  // Perte par connecteur en dB
   const POWER_BUDGET = 20;     // Budget de puissance typique en dB
 
+  // Chargement des paramètres sauvegardés au démarrage
+  useEffect(() => {
+    const loadSavedParams = async () => {
+      const savedParams = await loadOptiqueParams();
+      if (savedParams) {
+        if (savedParams.fiberLength !== undefined) setFiberLength(savedParams.fiberLength);
+        if (savedParams.splices !== undefined) setSplices(savedParams.splices);
+        if (savedParams.connectors !== undefined) setConnectors(savedParams.connectors);
+        if (savedParams.attenuation !== undefined) setAttenuation(savedParams.attenuation);
+        if (savedParams.fiberType !== undefined) setFiberType(savedParams.fiberType);
+        if (savedParams.wavelength !== undefined) setWavelength(savedParams.wavelength);
+        if (savedParams.temperature !== undefined) setTemperature(savedParams.temperature);
+        if (savedParams.dispersion !== undefined) setDispersion(savedParams.dispersion);
+        if (savedParams.showCrossSection !== undefined) setShowCrossSection(savedParams.showCrossSection);
+        if (savedParams.defects !== undefined) setDefects(savedParams.defects);
+      }
+    };
+    
+    loadSavedParams();
+  }, []);
+
+  // Sauvegarde automatique des paramètres lors des changements
+  useEffect(() => {
+    const saveParams = async () => {
+      const params: OptiqueSimulationParams = {
+        fiberLength,
+        splices,
+        connectors,
+        attenuation,
+        fiberType,
+        wavelength,
+        temperature,
+        dispersion,
+        showCrossSection,
+        defects
+      };
+      await saveOptiqueParams(params);
+    };
+    
+    // Délai pour éviter trop de sauvegardes
+    const timeoutId = setTimeout(saveParams, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [fiberLength, splices, connectors, attenuation, fiberType, wavelength, temperature, dispersion, showCrossSection, defects]);
+
   /**
    * Calcule le bilan de liaison à chaque modification des paramètres
    */
@@ -201,8 +303,112 @@ const OptiqueSimulationView: React.FC = () => {
     scenario.defects.forEach((defect: any) => setDefects(prev => [...prev, { ...defect, id: Math.random().toString() }]));
   };
 
+  // Fonction d'export PDF
+  const handleExportPDF = async () => {
+    try {
+      console.log('📊 Export PDF complet en cours...');
+      
+      // Récupérer toutes les données du dashboard
+      const gsmHistory = JSON.parse(localStorage.getItem('gsm_history') || '[]');
+      const umtsHistory = JSON.parse(localStorage.getItem('umts_history') || '[]');
+      const hertzienHistory = JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+      const optiqueHistory = JSON.parse(localStorage.getItem('optique_history') || '[]');
+
+      // Calculer les métriques globales
+      const totalGsmCalculs = gsmHistory.length;
+      const totalUmtsCalculs = umtsHistory.length;
+      const totalHertzienCalculs = hertzienHistory.length;
+      const totalOptiqueCalculs = optiqueHistory.length;
+
+      const totalGsmDistance = gsmHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalUmtsDistance = umtsHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalHertzienDistance = hertzienHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalOptiqueDistance = optiqueHistory.reduce((sum: number, item: any) => sum + (item.params?.length || 0), 0);
+
+      const totalGsmMarge = gsmHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalUmtsMarge = umtsHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalHertzienMarge = hertzienHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalOptiqueMarge = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const totalGsmBilan = gsmHistory.reduce((sum: number, item: any) => sum + (item.nbSites || 0), 0);
+      const totalUmtsBilan = umtsHistory.reduce((sum: number, item: any) => sum + (item.nbNodeB || 0), 0);
+      const totalHertzienBilan = hertzienHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalOptiqueBilan = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const allData = {
+        gsm: {
+          history: gsmHistory,
+          metrics: {
+            totalCalculs: totalGsmCalculs,
+            totalDistance: totalGsmDistance,
+            totalMarge: totalGsmMarge,
+            totalBilan: totalGsmBilan,
+            moyenneDistance: totalGsmCalculs > 0 ? totalGsmDistance / totalGsmCalculs : 0,
+            moyenneMarge: totalGsmCalculs > 0 ? totalGsmMarge / totalGsmCalculs : 0,
+            moyenneBilan: totalGsmCalculs > 0 ? totalGsmBilan / totalGsmCalculs : 0
+          }
+        },
+        umts: {
+          history: umtsHistory,
+          metrics: {
+            totalCalculs: totalUmtsCalculs,
+            totalDistance: totalUmtsDistance,
+            totalMarge: totalUmtsMarge,
+            totalBilan: totalUmtsBilan,
+            moyenneDistance: totalUmtsCalculs > 0 ? totalUmtsDistance / totalUmtsCalculs : 0,
+            moyenneMarge: totalUmtsCalculs > 0 ? totalUmtsMarge / totalUmtsCalculs : 0,
+            moyenneBilan: totalUmtsCalculs > 0 ? totalUmtsBilan / totalUmtsCalculs : 0
+          }
+        },
+        hertzien: {
+          history: hertzienHistory,
+          metrics: {
+            totalCalculs: totalHertzienCalculs,
+            totalDistance: totalHertzienDistance,
+            totalMarge: totalHertzienMarge,
+            totalBilan: totalHertzienBilan,
+            moyenneDistance: totalHertzienCalculs > 0 ? totalHertzienDistance / totalHertzienCalculs : 0,
+            moyenneMarge: totalHertzienCalculs > 0 ? totalHertzienMarge / totalHertzienCalculs : 0,
+            moyenneBilan: totalHertzienCalculs > 0 ? totalHertzienBilan / totalHertzienCalculs : 0
+          }
+        },
+        optique: {
+          history: optiqueHistory,
+          metrics: {
+            totalCalculs: totalOptiqueCalculs,
+            totalDistance: totalOptiqueDistance,
+            totalMarge: totalOptiqueMarge,
+            totalBilan: totalOptiqueBilan,
+            moyenneDistance: totalOptiqueCalculs > 0 ? totalOptiqueDistance / totalOptiqueCalculs : 0,
+            moyenneMarge: totalOptiqueCalculs > 0 ? totalOptiqueMarge / totalOptiqueCalculs : 0,
+            moyenneBilan: totalOptiqueCalculs > 0 ? totalOptiqueBilan / totalOptiqueCalculs : 0
+          }
+        },
+        global: {
+          totalCalculs: totalGsmCalculs + totalUmtsCalculs + totalHertzienCalculs + totalOptiqueCalculs,
+          totalDistance: totalGsmDistance + totalUmtsDistance + totalHertzienDistance + totalOptiqueDistance,
+          totalMarge: totalGsmMarge + totalUmtsMarge + totalHertzienMarge + totalOptiqueMarge,
+          totalBilan: totalGsmBilan + totalUmtsBilan + totalHertzienBilan + totalOptiqueBilan
+        }
+      };
+
+      const result = await exportDashboardReport(allData);
+      
+      if (result.success) {
+        console.log('✅ Export PDF réussi:', result.filePath);
+        alert(`PDF exporté avec succès !\nFichier: ${result.filePath}`);
+      } else {
+        console.error('❌ Échec de l\'export PDF:', result.error);
+        alert(`Erreur lors de l'export PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF. Vérifiez la console pour plus de détails.');
+    }
+  };
+
   return (
-    <div className="relative h-full bg-slate-900 text-white rounded-lg overflow-hidden">
+    <div className="simulation-view relative w-full h-full bg-slate-900 text-white rounded-lg overflow-hidden">
       {/* Panneau de contrôle gauche - Desktop seulement */}
       <div className="hidden sm:block absolute top-2 sm:top-4 left-2 sm:left-4 bottom-16 w-72 sm:w-80 z-10 flex flex-col gap-2 sm:gap-4 overflow-y-auto pr-2">
         <FloatingPanel title="Pilotage de la Simulation">
@@ -239,7 +445,16 @@ const OptiqueSimulationView: React.FC = () => {
       {/* Panneau de bilan de liaison - Desktop seulement */}
       <div className="hidden sm:block absolute top-2 sm:top-4 right-2 sm:right-4 w-72 sm:w-80 z-10">
         <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-lg shadow-lg p-3 sm:p-4 transition-all duration-300 opacity-50 hover:opacity-100">
-          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-cyan-400">📊 Bilan de Liaison</h3>
+          <div className="flex justify-between items-center mb-3 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-cyan-400">📊 Bilan de Liaison</h3>
+            <button
+              onClick={handleExportPDF}
+              className="px-2 py-1 bg-cyan-600 hover:bg-cyan-700 text-white text-xs rounded transition-colors"
+              title="Exporter en PDF"
+            >
+              📄 PDF
+            </button>
+          </div>
           <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
             <div className="flex justify-between items-center">
               <span className="text-slate-300">📉 Perte totale:</span>
@@ -356,6 +571,14 @@ const OptiqueSimulationView: React.FC = () => {
             <div className="flex justify-between"><span>Perte température:</span><span className="font-mono">{linkBudget.temperatureLoss.toFixed(2)} dB</span></div>
             <div className="flex justify-between text-yellow-500"><span>Perte défauts:</span><span className="font-mono">{linkBudget.defectLoss.toFixed(2)} dB</span></div>
           </div>
+          <div className="border-t border-slate-700 my-2 pt-3">
+            <button
+              onClick={handleExportPDF}
+              className="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded transition-colors"
+            >
+              📄 Exporter en PDF
+            </button>
+          </div>
         </div>
       </MobileModal>
 
@@ -370,7 +593,7 @@ const OptiqueSimulationView: React.FC = () => {
       {/* Canvas 3D - Responsive */}
       <Canvas 
         camera={{ position: [0, 2.5, fiberLength / 1.5], fov: 60 }} 
-        className="rounded-lg simulation-3d-mobile"
+        className="w-full h-full rounded-lg"
       >
         <color attach="background" args={['#0f172a']} />
         <Environment preset="city" />

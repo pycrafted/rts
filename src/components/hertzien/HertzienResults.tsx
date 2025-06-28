@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { usePDFExport } from '@/services/pdfExportService';
 
 interface HertzienResultsProps {
   frequency: number; // GHz
@@ -9,49 +10,57 @@ interface HertzienResultsProps {
   gainRx: number; // dBi
   losses: number; // dB
   threshold: number; // dBm
+  onSave?: () => void;
 }
 
-const HertzienResults: React.FC<HertzienResultsProps> = ({ frequency, distance, power, gainTx, gainRx, losses, threshold }) => {
-  // Conversion de la fréquence en MHz pour la formule
-  const freqMHz = frequency * 1000;
-  
-  // Calculs améliorés avec validations
-  const affaiblissement = 32.4 + 20 * Math.log10(freqMHz) + 20 * Math.log10(distance);
-  const bilan = power + gainTx + gainRx - affaiblissement - losses;
-  const marge = bilan - threshold;
-  
-  // Calculs supplémentaires pour l'analyse
-  const puissanceReception = power + gainTx - affaiblissement - losses + gainRx;
-  const rapportSignalBruit = puissanceReception - threshold;
-  const qualiteLiaison = rapportSignalBruit > 20 ? 'Excellente' : rapportSignalBruit > 10 ? 'Bonne' : rapportSignalBruit > 5 ? 'Moyenne' : 'Faible';
+const HertzienResults: React.FC<HertzienResultsProps> = ({ frequency, distance, power, gainTx, gainRx, losses, threshold, onSave }) => {
+  const [showFormula, setShowFormula] = useState(false);
+  const { exportDashboardReport } = usePDFExport();
 
-  // Indicateur couleur pour la marge avec seuils plus précis
-  let margeColor = 'bg-green-500';
-  let margeLabel = 'Excellente marge';
-  let recommandation = "La liaison est très fiable avec une excellente marge de sécurité.";
-  
+  // Calculs du bilan de liaison
+  const affaiblissement = 32.4 + 20 * Math.log10(frequency * 1000) + 20 * Math.log10(distance);
+  const bilan = power + gainTx + gainRx - affaiblissement - losses;
+  const puissanceReception = power + gainTx - affaiblissement - losses + gainRx;
+  const marge = puissanceReception - threshold;
+  const rapportSignalBruit = puissanceReception - threshold;
+
+  // Détermination de la qualité de liaison
+  let qualiteLiaison = '';
+  let margeColor = '';
+  let margeLabel = '';
+  let recommandation = '';
+
   if (marge < 0) {
+    qualiteLiaison = 'Impossible';
     margeColor = 'bg-red-500';
     margeLabel = 'Liaison impossible';
-    recommandation = "CRITIQUE : La liaison ne peut pas fonctionner. Augmentez la puissance, les gains ou réduisez la distance/fréquence.";
+    recommandation = 'Augmentez la puissance d\'émission ou réduisez la distance.';
   } else if (marge < 3) {
+    qualiteLiaison = 'Dangereuse';
     margeColor = 'bg-red-400';
     margeLabel = 'Marge insuffisante';
-    recommandation = "DANGER : La marge de liaison est insuffisante. Améliorez le gain, réduisez les pertes ou la distance.";
+    recommandation = 'La liaison est à la limite. Considérez des améliorations.';
   } else if (marge < 10) {
-    margeColor = 'bg-yellow-400';
+    qualiteLiaison = 'Limite';
+    margeColor = 'bg-yellow-500';
     margeLabel = 'Marge limite';
-    recommandation = "ATTENTION : La marge est limite. Un ajustement des paramètres est fortement conseillé.";
+    recommandation = 'La liaison fonctionne mais la marge est faible. Surveillez les conditions.';
   } else if (marge < 20) {
-    margeColor = 'bg-green-400';
+    qualiteLiaison = 'Bonne';
+    margeColor = 'bg-green-500';
     margeLabel = 'Bonne marge';
-    recommandation = "La liaison est fiable avec une marge de sécurité correcte.";
+    recommandation = 'La liaison est fiable avec une marge de sécurité correcte.';
+  } else {
+    qualiteLiaison = 'Excellente';
+    margeColor = 'bg-teal-500';
+    margeLabel = 'Excellente marge';
+    recommandation = 'La liaison est excellente avec une marge de sécurité importante.';
   }
 
   // Générer des points pour le profil de liaison (distance de 1 à la distance saisie)
   const profileData = Array.from({ length: Math.max(2, Math.ceil(distance)) }, (_, i) => {
     const d = (i + 1) * (distance / Math.max(2, Math.ceil(distance)));
-    const aff = 32.4 + 20 * Math.log10(freqMHz) + 20 * Math.log10(d);
+    const aff = 32.4 + 20 * Math.log10(frequency * 1000) + 20 * Math.log10(d);
     const bilanLocal = power + gainTx + gainRx - aff - losses;
     const margeLocal = bilanLocal - threshold;
     return { 
@@ -62,11 +71,10 @@ const HertzienResults: React.FC<HertzienResultsProps> = ({ frequency, distance, 
     };
   });
 
-  const [showFormula, setShowFormula] = useState(false);
-
   const handleSave = () => {
     const entry = {
       date: new Date().toISOString(),
+      distance: distance,
       affaiblissement,
       bilan,
       marge,
@@ -79,6 +87,131 @@ const HertzienResults: React.FC<HertzienResultsProps> = ({ frequency, distance, 
     history.unshift(entry);
     localStorage.setItem('hertzien_history', JSON.stringify(history.slice(0, 10)));
     alert('Résultat hertzien sauvegardé !');
+    if (onSave) {
+      onSave();
+    }
+  };
+
+  // Données pour les graphiques
+  const chartData = [
+    { name: 'Distance', value: distance },
+    { name: 'Fréquence', value: frequency },
+    { name: 'Puissance', value: power },
+    { name: 'Gain Tx', value: gainTx },
+    { name: 'Gain Rx', value: gainRx },
+    { name: 'Pertes', value: losses }
+  ];
+
+  const pieData = [
+    { name: 'Affaiblissement', value: affaiblissement },
+    { name: 'Gains totaux', value: gainTx + gainRx },
+    { name: 'Pertes diverses', value: losses },
+    { name: 'Puissance émission', value: power },
+  ];
+
+  const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
+
+  const handleExportPDF = async () => {
+    try {
+      console.log('📊 Export PDF complet en cours...');
+      
+      // Récupérer toutes les données du dashboard
+      const gsmHistory = JSON.parse(localStorage.getItem('gsm_history') || '[]');
+      const umtsHistory = JSON.parse(localStorage.getItem('umts_history') || '[]');
+      const hertzienHistory = JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+      const optiqueHistory = JSON.parse(localStorage.getItem('optique_history') || '[]');
+
+      // Calculer les métriques globales
+      const totalGsmCalculs = gsmHistory.length;
+      const totalUmtsCalculs = umtsHistory.length;
+      const totalHertzienCalculs = hertzienHistory.length;
+      const totalOptiqueCalculs = optiqueHistory.length;
+
+      const totalGsmDistance = gsmHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalUmtsDistance = umtsHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalHertzienDistance = hertzienHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalOptiqueDistance = optiqueHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+
+      const totalGsmMarge = gsmHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalUmtsMarge = umtsHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalHertzienMarge = hertzienHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalOptiqueMarge = optiqueHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+
+      const totalGsmBilan = gsmHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalUmtsBilan = umtsHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalHertzienBilan = hertzienHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalOptiqueBilan = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const allData = {
+        gsm: {
+          history: gsmHistory,
+          metrics: {
+            totalCalculs: totalGsmCalculs,
+            totalDistance: totalGsmDistance,
+            totalMarge: totalGsmMarge,
+            totalBilan: totalGsmBilan,
+            moyenneDistance: totalGsmCalculs > 0 ? totalGsmDistance / totalGsmCalculs : 0,
+            moyenneMarge: totalGsmCalculs > 0 ? totalGsmMarge / totalGsmCalculs : 0,
+            moyenneBilan: totalGsmCalculs > 0 ? totalGsmBilan / totalGsmCalculs : 0
+          }
+        },
+        umts: {
+          history: umtsHistory,
+          metrics: {
+            totalCalculs: totalUmtsCalculs,
+            totalDistance: totalUmtsDistance,
+            totalMarge: totalUmtsMarge,
+            totalBilan: totalUmtsBilan,
+            moyenneDistance: totalUmtsCalculs > 0 ? totalUmtsDistance / totalUmtsCalculs : 0,
+            moyenneMarge: totalUmtsCalculs > 0 ? totalUmtsMarge / totalUmtsCalculs : 0,
+            moyenneBilan: totalUmtsCalculs > 0 ? totalUmtsBilan / totalUmtsCalculs : 0
+          }
+        },
+        hertzien: {
+          history: hertzienHistory,
+          metrics: {
+            totalCalculs: totalHertzienCalculs,
+            totalDistance: totalHertzienDistance,
+            totalMarge: totalHertzienMarge,
+            totalBilan: totalHertzienBilan,
+            moyenneDistance: totalHertzienCalculs > 0 ? totalHertzienDistance / totalHertzienCalculs : 0,
+            moyenneMarge: totalHertzienCalculs > 0 ? totalHertzienMarge / totalHertzienCalculs : 0,
+            moyenneBilan: totalHertzienCalculs > 0 ? totalHertzienBilan / totalHertzienCalculs : 0
+          }
+        },
+        optique: {
+          history: optiqueHistory,
+          metrics: {
+            totalCalculs: totalOptiqueCalculs,
+            totalDistance: totalOptiqueDistance,
+            totalMarge: totalOptiqueMarge,
+            totalBilan: totalOptiqueBilan,
+            moyenneDistance: totalOptiqueCalculs > 0 ? totalOptiqueDistance / totalOptiqueCalculs : 0,
+            moyenneMarge: totalOptiqueCalculs > 0 ? totalOptiqueMarge / totalOptiqueCalculs : 0,
+            moyenneBilan: totalOptiqueCalculs > 0 ? totalOptiqueBilan / totalOptiqueCalculs : 0
+          }
+        },
+        global: {
+          totalCalculs: totalGsmCalculs + totalUmtsCalculs + totalHertzienCalculs + totalOptiqueCalculs,
+          totalDistance: totalGsmDistance + totalUmtsDistance + totalHertzienDistance + totalOptiqueDistance,
+          totalMarge: totalGsmMarge + totalUmtsMarge + totalHertzienMarge + totalOptiqueMarge,
+          totalBilan: totalGsmBilan + totalUmtsBilan + totalHertzienBilan + totalOptiqueBilan
+        }
+      };
+
+      const result = await exportDashboardReport(allData);
+      
+      if (result.success) {
+        console.log('✅ Export PDF réussi:', result.filePath);
+        alert(`PDF exporté avec succès !\nFichier: ${result.filePath}`);
+      } else {
+        console.error('❌ Échec de l\'export PDF:', result.error);
+        alert(`Erreur lors de l'export PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF. Vérifiez la console pour plus de détails.');
+    }
   };
 
   return (
@@ -123,13 +256,28 @@ const HertzienResults: React.FC<HertzienResultsProps> = ({ frequency, distance, 
         </div>
       </div>
       <div className="mb-6">
-        <button
-          onClick={() => setShowFormula((v) => !v)}
-          className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors flex items-center gap-2 mb-3 focus:outline-none focus:ring-2 focus:ring-primary-light"
-        >
-          <span role="img" aria-label="Formule">🧮</span>
-          {showFormula ? 'Masquer la formule' : 'Voir la formule'}
-        </button>
+        <div className="flex gap-3 mb-4">
+          <button
+            onClick={() => setShowFormula((v) => !v)}
+            className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
+          >
+            <span role="img" aria-label="Formule">🧮</span>
+            {showFormula ? 'Masquer la formule' : 'Voir la formule'}
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            <span role="img" aria-label="PDF">📄</span>
+            Export PDF
+          </button>
+          <button
+            onClick={handleSave}
+            className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
+          >
+            <span role="img" aria-label="Sauvegarder">💾</span> Sauvegarder
+          </button>
+        </div>
         {showFormula && (
           <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-xl shadow text-sm">
             <h5 className="font-bold text-blue-800 mb-2">Formules du bilan de liaison hertzien :</h5>
@@ -177,8 +325,45 @@ const HertzienResults: React.FC<HertzienResultsProps> = ({ frequency, distance, 
         <span className="text-2xl">💡</span>
         <div className="text-sm text-gray-700"><strong>Recommandation :</strong> {recommandation}</div>
       </div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow p-6 border border-blue-100">
+          <h4 className="font-semibold mb-4 text-primary-dark">Paramètres de la liaison</h4>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={true} />
+              <Tooltip />
+              <Bar dataKey="value" fill="#10B981" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className="bg-white rounded-xl shadow p-6 border border-blue-100">
+          <h4 className="font-semibold mb-4 text-primary-dark">Répartition des gains et pertes</h4>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {pieData.map((_entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
       <div className="mb-8 bg-white rounded-xl shadow p-6">
-        <h4 className="font-semibold mb-2 text-primary-dark">Profil de liaison : Affaiblissement et marge en fonction de la distance</h4>
+        <h4 className="font-semibold mb-4 text-primary-dark">Profil de liaison : Affaiblissement et marge en fonction de la distance</h4>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={profileData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -203,12 +388,6 @@ const HertzienResults: React.FC<HertzienResultsProps> = ({ frequency, distance, 
           </div>
         </div>
       </div>
-      <button
-        onClick={handleSave}
-        className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
-      >
-        <span role="img" aria-label="Sauvegarder">💾</span> Sauvegarder
-      </button>
     </div>
   );
 };

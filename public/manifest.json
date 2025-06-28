@@ -36,7 +36,7 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "Vue d'ensemble",
-      "url": "/dashboard",
+      "url": "/",
       "icons": [{ "src": "/vite.svg", "sizes": "96x96" }]
     },
     {

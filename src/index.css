@@ -38,6 +38,33 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  /* S'assurer que le curseur par défaut est normal */
+  cursor: default;
+}
+
+/* Correction du curseur pour les éléments interactifs */
+button, a, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] {
+  cursor: pointer;
+}
+
+/* S'assurer que les éléments non-interactifs n'ont pas le curseur pointer */
+div, span, p, h1, h2, h3, h4, h5, h6, section, article, aside, header, footer, main {
+  cursor: default;
+}
+
+/* Correction spécifique pour les labels avec cursor-pointer */
+label.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Correction pour les sliders */
+input[type="range"] {
+  cursor: pointer;
+}
+
+/* Correction pour les éléments avec hover */
+.hover\:cursor-pointer:hover {
+  cursor: pointer;
 }
 
 /* Optimisations mobile */

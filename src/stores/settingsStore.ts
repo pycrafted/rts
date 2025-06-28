@@ -33,6 +33,8 @@ interface SettingsActions {
   toggleAutoSave: () => void;
   togglePerformanceMode: () => void;
   resetSettings: () => void;
+  loadFromStorage: () => Promise<void>;
+  saveToStorage: () => Promise<void>;
 }
 
 type SettingsStore = SettingsState & SettingsActions;
@@ -52,7 +54,7 @@ const initialState: SettingsState = {
 };
 
 export const useSettingsStore = create<SettingsStore>()(
-  subscribeWithSelector((set) => ({
+  subscribeWithSelector((set, get) => ({
     ...initialState,
 
     // Actions optimisées avec des mises à jour atomiques
@@ -85,8 +87,69 @@ export const useSettingsStore = create<SettingsStore>()(
     })),
 
     resetSettings: () => set(initialState),
+
+    // Méthodes de persistance
+    loadFromStorage: async () => {
+      try {
+        const { ElectronService } = await import('@/services/electronService');
+        const electronService = ElectronService.getInstance();
+        
+        if (electronService.isAvailable()) {
+          const { DesktopStorage } = await import('@/services/desktopStorage');
+          const storage = DesktopStorage.getInstance();
+          const savedSettings = await storage.getSettings();
+          if (savedSettings) {
+            set({ ...initialState, ...savedSettings });
+          }
+        } else {
+          // Fallback vers localStorage en mode web
+          const savedSettings = localStorage.getItem('settings');
+          if (savedSettings) {
+            set({ ...initialState, ...JSON.parse(savedSettings) });
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des paramètres:', error);
+      }
+    },
+
+    saveToStorage: async () => {
+      try {
+        const { ElectronService } = await import('@/services/electronService');
+        const electronService = ElectronService.getInstance();
+        
+        if (electronService.isAvailable()) {
+          const { DesktopStorage } = await import('@/services/desktopStorage');
+          const storage = DesktopStorage.getInstance();
+          const currentState = get();
+          await storage.saveSettings(currentState);
+        } else {
+          // Fallback vers localStorage en mode web
+          const currentState = get();
+          localStorage.setItem('settings', JSON.stringify(currentState));
+        }
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde des paramètres:', error);
+      }
+    },
   }))
 );
+
+// Auto-sauvegarde lors des changements
+useSettingsStore.subscribe(
+  (state) => state,
+  async (newState) => {
+    // Éviter la sauvegarde lors du chargement initial
+    if (newState.autoSave !== undefined) {
+      await useSettingsStore.getState().saveToStorage();
+    }
+  }
+);
+
+// Chargement automatique au démarrage
+if (typeof window !== 'undefined') {
+  useSettingsStore.getState().loadFromStorage();
+}
 
 // Sélecteurs optimisés pour éviter les re-renders inutiles
 export const useDarkMode = () => useSettingsStore((state) => state.darkMode);

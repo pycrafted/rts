@@ -135,7 +135,6 @@ function isStaticAsset(pathname) {
 // Vérifier si c'est une requête de page
 function isPageRequest(pathname) {
   return pathname === '/' || 
-         pathname.startsWith('/dashboard') || 
          pathname.startsWith('/simulation') || 
          pathname.startsWith('/gsm') || 
          pathname.startsWith('/umts') || 

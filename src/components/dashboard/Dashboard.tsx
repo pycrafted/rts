@@ -1,19 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { Link } from 'react-router-dom';
+import { usePDFExport } from '../../services/pdfExportService';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import MetricCard from '../data/MetricCard';
-import { Link } from 'react-router-dom';
-
-// Données fictives pour le dashboard
-const stats = [
-  { module: 'GSM', sites: 12, marge: 15, bilan: 10 },
-  { module: 'Hertzien', sites: 4, marge: 8, bilan: 5 },
-  { module: 'Optique', sites: 2, marge: 20, bilan: 18 },
-  { module: 'UMTS', sites: 6, marge: 12, bilan: 9 },
-];
 
 // Composant optimisé avec React.memo
 const DashboardCard = React.memo<{ title: string; children: React.ReactNode; className?: string }>(({ title, children, className }) => (
@@ -39,25 +30,74 @@ const MetricCardOptimized = React.memo<{ title: string; value: string; icon: str
 MetricCardOptimized.displayName = 'MetricCardOptimized';
 
 const Dashboard: React.FC = () => {
-  const [gsmHistory, setGsmHistory] = React.useState<any[]>([]);
-  const [hertzienHistory, setHertzienHistory] = React.useState<any[]>([]);
-  const [optiqueHistory, setOptiqueHistory] = React.useState<any[]>([]);
-  const [umtsHistory, setUmtsHistory] = React.useState<any[]>([]);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { exportDashboardReport } = usePDFExport();
+  const [gsmHistory, setGsmHistory] = useState<any[]>([]);
+  const [hertzienHistory, setHertzienHistory] = useState<any[]>([]);
+  const [optiqueHistory, setOptiqueHistory] = useState<any[]>([]);
+  const [umtsHistory, setUmtsHistory] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
-    setGsmHistory(getGsmHistory());
-    setHertzienHistory(getHertzienHistory());
-    setOptiqueHistory(getOptiqueHistory());
-    setUmtsHistory(getUmtsHistory());
+  // Fonction pour charger toutes les données
+  const loadAllData = () => {
+    try {
+      // Utiliser localStorage directement avec gestion d'erreurs
+      const gsm = JSON.parse(localStorage.getItem('gsm_history') || '[]');
+      const umts = JSON.parse(localStorage.getItem('umts_history') || '[]');
+      const hertzien = JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+      const optique = JSON.parse(localStorage.getItem('optique_history') || '[]');
+      
+      setGsmHistory(Array.isArray(gsm) ? gsm : []);
+      setUmtsHistory(Array.isArray(umts) ? umts : []);
+      setHertzienHistory(Array.isArray(hertzien) ? hertzien : []);
+      setOptiqueHistory(Array.isArray(optique) ? optique : []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      // Fallback vers des tableaux vides
+      setGsmHistory([]);
+      setUmtsHistory([]);
+      setHertzienHistory([]);
+      setOptiqueHistory([]);
+    }
+  };
+
+  useEffect(() => {
+    loadAllData();
+
+    // Écouter les événements de mise à jour
+    const handleStorageUpdate = () => {
+      loadAllData();
+    };
+
+    // Écouter les événements personnalisés pour chaque type
+    window.addEventListener('gsmHistoryUpdated', handleStorageUpdate);
+    window.addEventListener('umtsHistoryUpdated', handleStorageUpdate);
+    window.addEventListener('hertzienHistoryUpdated', handleStorageUpdate);
+    window.addEventListener('optiqueHistoryUpdated', handleStorageUpdate);
+
+    // Écouter les changements du localStorage (fallback)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (['gsm_history', 'umts_history', 'hertzien_history', 'optique_history'].includes(e.key || '')) {
+        loadAllData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('gsmHistoryUpdated', handleStorageUpdate);
+      window.removeEventListener('umtsHistoryUpdated', handleStorageUpdate);
+      window.removeEventListener('hertzienHistoryUpdated', handleStorageUpdate);
+      window.removeEventListener('optiqueHistoryUpdated', handleStorageUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   function exportAllHistories() {
     const data = {
-      gsm: getGsmHistory(),
-      hertzien: getHertzienHistory(),
-      optique: getOptiqueHistory(),
-      umts: getUmtsHistory(),
+      gsm: gsmHistory,
+      hertzien: hertzienHistory,
+      optique: optiqueHistory,
+      umts: umtsHistory,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -77,15 +117,15 @@ const Dashboard: React.FC = () => {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
+        
+        // Sauvegarder dans localStorage
         if (data.gsm) localStorage.setItem('gsm_history', JSON.stringify(data.gsm));
         if (data.hertzien) localStorage.setItem('hertzien_history', JSON.stringify(data.hertzien));
         if (data.optique) localStorage.setItem('optique_history', JSON.stringify(data.optique));
         if (data.umts) localStorage.setItem('umts_history', JSON.stringify(data.umts));
+        
         alert('Import réussi !');
-        setGsmHistory(getGsmHistory());
-        setHertzienHistory(getHertzienHistory());
-        setOptiqueHistory(getOptiqueHistory());
-        setUmtsHistory(getUmtsHistory());
+        loadAllData();
       } catch {
         alert('Fichier invalide.');
       }
@@ -93,117 +133,178 @@ const Dashboard: React.FC = () => {
     reader.readAsText(file);
   }
 
-  function exportPDFReport() {
-    const doc = new jsPDF();
-    doc.text('Rapport de dimensionnement Télécoms', 14, 16);
-    let y = 24;
+  async function exportPDFReport() {
+    try {
+      console.log('📊 Export PDF complet en cours...');
+      
+      // Calculer les métriques globales
+      const totalGsmCalculs = gsmHistory.length;
+      const totalUmtsCalculs = umtsHistory.length;
+      const totalHertzienCalculs = hertzienHistory.length;
+      const totalOptiqueCalculs = optiqueHistory.length;
 
-    // GSM
-    const gsm = getGsmHistory()[0];
-    if (gsm) {
-      doc.text('GSM', 14, y);
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Abonnés', 'Sites', 'TRX', 'Trafic (Erlangs)']],
-        body: [[
-          gsm.nbAbonnes,
-          gsm.nbSites,
-          gsm.nbTRX,
-          gsm.traficTotal
-        ]],
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
+      const totalGsmDistance = gsmHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalUmtsDistance = umtsHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalHertzienDistance = hertzienHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalOptiqueDistance = optiqueHistory.reduce((sum: number, item: any) => sum + (item.params?.length || 0), 0);
+
+      const totalGsmMarge = gsmHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalUmtsMarge = umtsHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalHertzienMarge = hertzienHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalOptiqueMarge = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const totalGsmBilan = gsmHistory.reduce((sum: number, item: any) => sum + (item.nbSites || 0), 0);
+      const totalUmtsBilan = umtsHistory.reduce((sum: number, item: any) => sum + (item.nbNodeB || 0), 0);
+      const totalHertzienBilan = hertzienHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalOptiqueBilan = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const allData = {
+        gsm: {
+          history: gsmHistory,
+          metrics: {
+            totalCalculs: totalGsmCalculs,
+            totalDistance: totalGsmDistance,
+            totalMarge: totalGsmMarge,
+            totalBilan: totalGsmBilan,
+            moyenneDistance: totalGsmCalculs > 0 ? totalGsmDistance / totalGsmCalculs : 0,
+            moyenneMarge: totalGsmCalculs > 0 ? totalGsmMarge / totalGsmCalculs : 0,
+            moyenneBilan: totalGsmCalculs > 0 ? totalGsmBilan / totalGsmCalculs : 0
+          }
+        },
+        umts: {
+          history: umtsHistory,
+          metrics: {
+            totalCalculs: totalUmtsCalculs,
+            totalDistance: totalUmtsDistance,
+            totalMarge: totalUmtsMarge,
+            totalBilan: totalUmtsBilan,
+            moyenneDistance: totalUmtsCalculs > 0 ? totalUmtsDistance / totalUmtsCalculs : 0,
+            moyenneMarge: totalUmtsCalculs > 0 ? totalUmtsMarge / totalUmtsCalculs : 0,
+            moyenneBilan: totalUmtsCalculs > 0 ? totalUmtsBilan / totalUmtsCalculs : 0
+          }
+        },
+        hertzien: {
+          history: hertzienHistory,
+          metrics: {
+            totalCalculs: totalHertzienCalculs,
+            totalDistance: totalHertzienDistance,
+            totalMarge: totalHertzienMarge,
+            totalBilan: totalHertzienBilan,
+            moyenneDistance: totalHertzienCalculs > 0 ? totalHertzienDistance / totalHertzienCalculs : 0,
+            moyenneMarge: totalHertzienCalculs > 0 ? totalHertzienMarge / totalHertzienCalculs : 0,
+            moyenneBilan: totalHertzienCalculs > 0 ? totalHertzienBilan / totalHertzienCalculs : 0
+          }
+        },
+        optique: {
+          history: optiqueHistory,
+          metrics: {
+            totalCalculs: totalOptiqueCalculs,
+            totalDistance: totalOptiqueDistance,
+            totalMarge: totalOptiqueMarge,
+            totalBilan: totalOptiqueBilan,
+            moyenneDistance: totalOptiqueCalculs > 0 ? totalOptiqueDistance / totalOptiqueCalculs : 0,
+            moyenneMarge: totalOptiqueCalculs > 0 ? totalOptiqueMarge / totalOptiqueCalculs : 0,
+            moyenneBilan: totalOptiqueCalculs > 0 ? totalOptiqueBilan / totalOptiqueCalculs : 0
+          }
+        },
+        global: {
+          totalCalculs: totalGsmCalculs + totalUmtsCalculs + totalHertzienCalculs + totalOptiqueCalculs,
+          totalDistance: totalGsmDistance + totalUmtsDistance + totalHertzienDistance + totalOptiqueDistance,
+          totalMarge: totalGsmMarge + totalUmtsMarge + totalHertzienMarge + totalOptiqueMarge,
+          totalBilan: totalGsmBilan + totalUmtsBilan + totalHertzienBilan + totalOptiqueBilan
+        }
+      };
+
+      const result = await exportDashboardReport(allData);
+      
+      if (result.success) {
+        console.log('✅ Export PDF réussi:', result.filePath);
+        alert(`PDF exporté avec succès !\nFichier: ${result.filePath}`);
+      } else {
+        console.error('❌ Échec de l\'export PDF:', result.error);
+        alert(`Erreur lors de l'export PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF. Vérifiez la console pour plus de détails.');
     }
-
-    // Hertzien
-    const hertzien = getHertzienHistory()[0];
-    if (hertzien) {
-      doc.text('Hertzien', 14, y);
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Affaiblissement (dB)', 'Bilan (dB)', 'Marge (dB)']],
-        body: [[
-          hertzien.affaiblissement,
-          hertzien.bilan,
-          hertzien.marge
-        ]],
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-    }
-
-    // Optique
-    const optique = getOptiqueHistory()[0];
-    if (optique) {
-      doc.text('Optique', 14, y);
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Att. fibre (dB)', 'Pertes totales (dB)', 'Bilan (dBm)']],
-        body: [[
-          optique.attFibre,
-          optique.pertesTotales,
-          optique.bilan
-        ]],
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-    }
-
-    // UMTS
-    const umts = getUmtsHistory()[0];
-    if (umts) {
-      doc.text('UMTS', 14, y);
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Débit total (kbps)', 'Cellules', 'NodeB']],
-        body: [[
-          umts.debitTotal,
-          umts.nbCellules,
-          umts.nbNodeB
-        ]],
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-    }
-
-    doc.save('rapport_dimensionnement_telecoms.pdf');
   }
 
-  const totalSites = stats.reduce((sum, stat) => sum + stat.sites, 0);
+  // Calculs basés sur les vraies données
+  const totalSites = useMemo(() => {
+    const gsmSites = gsmHistory.reduce((sum, item) => sum + (item.nbSites || 0), 0);
+    const umtsNodeB = umtsHistory.reduce((sum, item) => sum + (item.nbNodeB || 0), 0);
+    return gsmSites + umtsNodeB;
+  }, [gsmHistory, umtsHistory]);
+
   const totalCalculs = gsmHistory.length + hertzienHistory.length + optiqueHistory.length + umtsHistory.length;
+
+  // Calcul de la marge moyenne
+  const margeMoyenne = useMemo(() => {
+    const marges = [
+      ...hertzienHistory.map(item => item.marge || 0),
+      ...optiqueHistory.map(item => item.marge || 0)
+    ];
+    return marges.length > 0 ? (marges.reduce((sum, marge) => sum + marge, 0) / marges.length).toFixed(1) : '0.0';
+  }, [hertzienHistory, optiqueHistory]);
+
+  // Calcul du bilan moyen
+  const bilanMoyen = useMemo(() => {
+    const bilans = [
+      ...hertzienHistory.map(item => item.bilan || 0),
+      ...optiqueHistory.map(item => item.bilan || 0)
+    ];
+    return bilans.length > 0 ? (bilans.reduce((sum, bilan) => sum + bilan, 0) / bilans.length).toFixed(1) : '0.0';
+  }, [hertzienHistory, optiqueHistory]);
+
+  // Données pour le graphique basées sur les vraies données
+  const chartData = useMemo(() => {
+    const gsmSites = gsmHistory.reduce((sum, item) => sum + (item.nbSites || 0), 0);
+    const umtsNodeB = umtsHistory.reduce((sum, item) => sum + (item.nbNodeB || 0), 0);
+    
+    return [
+      { module: 'GSM', sites: gsmSites, calculs: gsmHistory.length },
+      { module: 'UMTS', sites: umtsNodeB, calculs: umtsHistory.length },
+      { module: 'Hertzien', sites: hertzienHistory.length, calculs: hertzienHistory.length },
+      { module: 'Optique', sites: optiqueHistory.length, calculs: optiqueHistory.length },
+    ];
+  }, [gsmHistory, umtsHistory, hertzienHistory, optiqueHistory]);
 
   // Mémoriser les données des métriques
   const metrics = useMemo(() => [
     {
       title: "Simulations GSM",
-      value: `${getGsmHistory().length}`,
+      value: `${gsmHistory.length}`,
       icon: "📱",
       variant: "default" as const,
       link: "/gsm"
     },
     {
       title: "Simulations UMTS",
-      value: `${getUmtsHistory().length}`,
+      value: `${umtsHistory.length}`,
       icon: "📡",
       variant: "success" as const,
       link: "/umts"
     },
     {
       title: "Liaisons Hertziennes",
-      value: `${getHertzienHistory().length}`,
+      value: `${hertzienHistory.length}`,
       icon: "🛰️",
       variant: "warning" as const,
       link: "/hertzien"
     },
     {
       title: "Fibres Optiques",
-      value: `${getOptiqueHistory().length}`,
+      value: `${optiqueHistory.length}`,
       icon: "🔌",
       variant: "error" as const,
       link: "/optique"
     }
-  ], []);
+  ], [gsmHistory.length, umtsHistory.length, hertzienHistory.length, optiqueHistory.length]);
 
   // Mémoriser les sections rapides
   const quickActions = useMemo(() => [
-    { title: "Simulation Générale", description: "Liaisons hertziennes avec obstacles", link: "/simulation", icon: "🌐" },
+    { title: "Simulation Hertzien", description: "Liaisons hertziennes avec obstacles", link: "/simulation/hertzien", icon: "🛰️" },
     { title: "Simulation GSM", description: "Couverture et dimensionnement", link: "/simulation/gsm", icon: "📱" },
     { title: "Simulation UMTS", description: "Facteur de charge et QoS", link: "/simulation/umts", icon: "📡" },
     { title: "Simulation Optique", description: "Bilan de liaison fibre", link: "/simulation/optique", icon: "🔌" }
@@ -261,16 +362,15 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <MetricCard
           title="Total Sites"
-          value={totalSites}
+          value={totalSites.toString()}
           description="Sites déployés"
           icon="📡"
           variant="default"
-          trend={{ value: 12, isPositive: true }}
         />
         
         <MetricCard
           title="Calculs"
-          value={totalCalculs}
+          value={totalCalculs.toString()}
           description="Dimensionnements"
           icon="🧮"
           variant="success"
@@ -278,7 +378,7 @@ const Dashboard: React.FC = () => {
         
         <MetricCard
           title="Marge moy."
-          value="13.8 dB"
+          value={`${margeMoyenne} dB`}
           description="Marge de sécurité"
           icon="📊"
           variant="warning"
@@ -286,7 +386,7 @@ const Dashboard: React.FC = () => {
         
         <MetricCard
           title="Bilan moy."
-          value="10.5 dB"
+          value={`${bilanMoyen} dB`}
           description="Bilan de liaison"
           icon="⚖️"
           variant="default"
@@ -357,7 +457,7 @@ const Dashboard: React.FC = () => {
         <CardContent>
           <div className="h-48 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                 <XAxis 
                   dataKey="module" 
@@ -394,7 +494,7 @@ const Dashboard: React.FC = () => {
       </Card>
 
       {/* Historique récent - Mobile: accordéon, Desktop: grille */}
-      <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
+      <div className="space-y-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 sm:space-y-0">
         <Card className="card-mobile">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg sm:text-xl">📱 Historique GSM</CardTitle>
@@ -468,6 +568,80 @@ const Dashboard: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        <Card className="card-mobile">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg sm:text-xl">🛰️ Historique Hertzien</CardTitle>
+            <CardDescription className="text-sm">Derniers calculs effectués</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {hertzienHistory.length > 0 ? (
+              <div className="space-y-2 sm:space-y-3">
+                {hertzienHistory.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1 min-w-0 mr-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">
+                        {item.distance} km
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-medium text-primary-600 text-sm truncate">
+                        {item.bilan?.toFixed(1)} dB
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {item.marge?.toFixed(1)} dB marge
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4 text-sm">
+                Aucun calcul Hertzien récent
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="card-mobile">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg sm:text-xl">🔌 Historique Optique</CardTitle>
+            <CardDescription className="text-sm">Derniers calculs effectués</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {optiqueHistory.length > 0 ? (
+              <div className="space-y-2 sm:space-y-3">
+                {optiqueHistory.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1 min-w-0 mr-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">
+                        {item.params?.length} km
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-medium text-primary-600 text-sm truncate">
+                        {item.bilan?.toFixed(1)} dBm
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {item.pertesTotales?.toFixed(1)} dB pertes
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4 text-sm">
+                Aucun calcul Optique récent
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Assistant IA - Mobile: bouton flottant, Desktop: carte */}
@@ -521,39 +695,6 @@ const Dashboard: React.FC = () => {
       />
     </div>
   );
-};
-
-// Fonctions utilitaires mémorisées
-const getGsmHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('gsm_history') || '[]');
-  } catch {
-    return [];
-  }
-};
-
-const getUmtsHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('umts_history') || '[]');
-  } catch {
-    return [];
-  }
-};
-
-const getHertzienHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('hertzien_history') || '[]');
-  } catch {
-    return [];
-  }
-};
-
-const getOptiqueHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem('optique_history') || '[]');
-  } catch {
-    return [];
-  }
 };
 
 export default Dashboard; 

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { usePDFExport } from '../../services/pdfExportService';
 
 interface GSMResultsProps {
   area: number;
@@ -9,6 +8,7 @@ interface GSMResultsProps {
   trafficPerUser: number;
   penetration: number;
   activity: number;
+  onSave?: () => void;
 }
 
 // Paramètres techniques GSM plus précis
@@ -20,7 +20,9 @@ const EFFICIENCE_SPECTRALE = 0.8; // Efficacité spectrale (80%)
 const FACTEUR_DE_SECURITE = 1.2; // 20% de marge
 const NOMBRE_CANAUX_PAR_TRX = 8; // Canaux par TRX
 
-const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, penetration, activity }) => {
+const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, penetration, activity, onSave }) => {
+  const { exportDashboardReport } = usePDFExport();
+
   // Calculs améliorés avec formules techniques GSM
   const nbAbonnes = area * density * (penetration / 100);
   const traficTotal = nbAbonnes * (trafficPerUser / 1000) * activity; // Conversion mErlang -> Erlang
@@ -80,27 +82,107 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
 
   const [showFormula, setShowFormula] = useState(false);
 
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Résultats du dimensionnement GSM', 14, 16);
-    autoTable(doc, {
-      startY: 24,
-      head: [['Paramètre', 'Valeur', 'Unité']],
-      body: [
-        ["Nombre d'abonnés", nbAbonnes.toLocaleString(undefined, { maximumFractionDigits: 0 }), 'abonnés'],
-        ['Trafic total', traficTotal.toLocaleString(undefined, { maximumFractionDigits: 2 }), 'Erlangs'],
-        ['Trafic avec sécurité', traficAvecSecurite.toLocaleString(undefined, { maximumFractionDigits: 2 }), 'Erlangs'],
-        ['Nombre de TRX', nbTRX.toString(), 'TRX'],
-        ['Nombre de sites BTS', nbSites.toString(), 'sites'],
-        ['Nombre de canaux', nbCanaux.toString(), 'canaux'],
-        ['Capacité spectrale', capaciteSpectrale.toLocaleString(undefined, { maximumFractionDigits: 1 }), 'canaux'],
-        ['Densité de trafic', densiteTrafic.toLocaleString(undefined, { maximumFractionDigits: 3 }), 'Erlangs/km²'],
-        ['Charge par site', chargeParSite.toLocaleString(undefined, { maximumFractionDigits: 2 }), 'Erlangs/site'],
-        ['Qualité de service (GoS)', (gos * 100).toLocaleString(undefined, { maximumFractionDigits: 2 }), '%'],
-        ['Couverture par site', couvertureParSite.toString(), 'km²'],
-      ],
-    });
-    doc.save('resultats_gsm.pdf');
+  const handleExportPDF = async () => {
+    try {
+      console.log('📊 Export PDF complet en cours...');
+      
+      // Récupérer toutes les données du dashboard
+      const gsmHistory = JSON.parse(localStorage.getItem('gsm_history') || '[]');
+      const umtsHistory = JSON.parse(localStorage.getItem('umts_history') || '[]');
+      const hertzienHistory = JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+      const optiqueHistory = JSON.parse(localStorage.getItem('optique_history') || '[]');
+
+      // Calculer les métriques globales
+      const totalGsmCalculs = gsmHistory.length;
+      const totalUmtsCalculs = umtsHistory.length;
+      const totalHertzienCalculs = hertzienHistory.length;
+      const totalOptiqueCalculs = optiqueHistory.length;
+
+      const totalGsmDistance = gsmHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalUmtsDistance = umtsHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalHertzienDistance = hertzienHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalOptiqueDistance = optiqueHistory.reduce((sum: number, item: any) => sum + (item.params?.length || 0), 0);
+
+      const totalGsmMarge = gsmHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalUmtsMarge = umtsHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalHertzienMarge = hertzienHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalOptiqueMarge = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const totalGsmBilan = gsmHistory.reduce((sum: number, item: any) => sum + (item.nbSites || 0), 0);
+      const totalUmtsBilan = umtsHistory.reduce((sum: number, item: any) => sum + (item.nbNodeB || 0), 0);
+      const totalHertzienBilan = hertzienHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalOptiqueBilan = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const allData = {
+        gsm: {
+          history: gsmHistory,
+          metrics: {
+            totalCalculs: totalGsmCalculs,
+            totalDistance: totalGsmDistance,
+            totalMarge: totalGsmMarge,
+            totalBilan: totalGsmBilan,
+            moyenneDistance: totalGsmCalculs > 0 ? totalGsmDistance / totalGsmCalculs : 0,
+            moyenneMarge: totalGsmCalculs > 0 ? totalGsmMarge / totalGsmCalculs : 0,
+            moyenneBilan: totalGsmCalculs > 0 ? totalGsmBilan / totalGsmCalculs : 0
+          }
+        },
+        umts: {
+          history: umtsHistory,
+          metrics: {
+            totalCalculs: totalUmtsCalculs,
+            totalDistance: totalUmtsDistance,
+            totalMarge: totalUmtsMarge,
+            totalBilan: totalUmtsBilan,
+            moyenneDistance: totalUmtsCalculs > 0 ? totalUmtsDistance / totalUmtsCalculs : 0,
+            moyenneMarge: totalUmtsCalculs > 0 ? totalUmtsMarge / totalUmtsCalculs : 0,
+            moyenneBilan: totalUmtsCalculs > 0 ? totalUmtsBilan / totalUmtsCalculs : 0
+          }
+        },
+        hertzien: {
+          history: hertzienHistory,
+          metrics: {
+            totalCalculs: totalHertzienCalculs,
+            totalDistance: totalHertzienDistance,
+            totalMarge: totalHertzienMarge,
+            totalBilan: totalHertzienBilan,
+            moyenneDistance: totalHertzienCalculs > 0 ? totalHertzienDistance / totalHertzienCalculs : 0,
+            moyenneMarge: totalHertzienCalculs > 0 ? totalHertzienMarge / totalHertzienCalculs : 0,
+            moyenneBilan: totalHertzienCalculs > 0 ? totalHertzienBilan / totalHertzienCalculs : 0
+          }
+        },
+        optique: {
+          history: optiqueHistory,
+          metrics: {
+            totalCalculs: totalOptiqueCalculs,
+            totalDistance: totalOptiqueDistance,
+            totalMarge: totalOptiqueMarge,
+            totalBilan: totalOptiqueBilan,
+            moyenneDistance: totalOptiqueCalculs > 0 ? totalOptiqueDistance / totalOptiqueCalculs : 0,
+            moyenneMarge: totalOptiqueCalculs > 0 ? totalOptiqueMarge / totalOptiqueCalculs : 0,
+            moyenneBilan: totalOptiqueCalculs > 0 ? totalOptiqueBilan / totalOptiqueCalculs : 0
+          }
+        },
+        global: {
+          totalCalculs: totalGsmCalculs + totalUmtsCalculs + totalHertzienCalculs + totalOptiqueCalculs,
+          totalDistance: totalGsmDistance + totalUmtsDistance + totalHertzienDistance + totalOptiqueDistance,
+          totalMarge: totalGsmMarge + totalUmtsMarge + totalHertzienMarge + totalOptiqueMarge,
+          totalBilan: totalGsmBilan + totalUmtsBilan + totalHertzienBilan + totalOptiqueBilan
+        }
+      };
+
+      const result = await exportDashboardReport(allData);
+      
+      if (result.success) {
+        console.log('✅ Export PDF réussi:', result.filePath);
+        alert(`PDF exporté avec succès !\nFichier: ${result.filePath}`);
+      } else {
+        console.error('❌ Échec de l\'export PDF:', result.error);
+        alert(`Erreur lors de l'export PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF. Vérifiez la console pour plus de détails.');
+    }
   };
 
   const handleSave = () => {
@@ -121,7 +203,13 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
       params: { area, density, trafficPerUser, penetration, activity },
     });
     localStorage.setItem('gsm_history', JSON.stringify(history.slice(0, 10)));
-    alert('Résultat GSM sauvegardé !');
+    
+    // Déclencher un événement personnalisé pour notifier la mise à jour
+    window.dispatchEvent(new CustomEvent('gsmHistoryUpdated'));
+    
+    if (onSave) {
+      onSave();
+    }
   };
 
   return (
@@ -135,19 +223,19 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
           <span className="text-gray-700 text-sm font-medium text-center">Nombre d'abonnés</span>
         </div>
         <div className="bg-green-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow border border-green-200">
-          <span className="text-2xl font-bold text-green-700 mb-1">{traficTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-          <span className="text-gray-700 text-sm font-medium text-center">Trafic total (Erlangs)</span>
+          <span className="text-2xl font-bold text-green-700 mb-1">{nbSites}</span>
+          <span className="text-gray-700 text-sm font-medium text-center">Nombre de sites BTS</span>
         </div>
         <div className="bg-yellow-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow border border-yellow-200">
           <span className="text-2xl font-bold text-yellow-600 mb-1">{nbTRX}</span>
           <span className="text-gray-700 text-sm font-medium text-center">Nombre de TRX</span>
         </div>
         <div className="bg-purple-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow border border-purple-200">
-          <span className="text-2xl font-bold text-purple-700 mb-1">{nbSites}</span>
-          <span className="text-gray-700 text-sm font-medium text-center">Nombre de sites BTS</span>
+          <span className="text-2xl font-bold text-purple-700 mb-1">{traficTotal.toFixed(2)}</span>
+          <span className="text-gray-700 text-sm font-medium text-center">Trafic total (Erlang)</span>
         </div>
       </div>
-
+      
       {/* Métriques secondaires */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         <div className="bg-orange-50 rounded-xl shadow p-4 border border-orange-200">
@@ -159,32 +247,32 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
           <div className="text-gray-700 text-sm">Capacité spectrale</div>
         </div>
         <div className="bg-red-50 rounded-xl shadow p-4 border border-red-200">
-          <div className="text-lg font-bold text-red-700 mb-1">{(gos * 100).toFixed(2)}%</div>
-          <div className="text-gray-700 text-sm">GoS (Grade of Service)</div>
-        </div>
-        <div className="bg-teal-50 rounded-xl shadow p-4 border border-teal-200">
-          <div className="text-lg font-bold text-teal-700 mb-1">{densiteTrafic.toFixed(3)}</div>
+          <div className="text-lg font-bold text-red-700 mb-1">{densiteTrafic.toFixed(3)}</div>
           <div className="text-gray-700 text-sm">Densité trafic (E/km²)</div>
         </div>
+        <div className="bg-teal-50 rounded-xl shadow p-4 border border-teal-200">
+          <div className="text-lg font-bold text-teal-700 mb-1">{chargeParSite.toFixed(2)}</div>
+          <div className="text-gray-700 text-sm">Charge/site (Erlang)</div>
+        </div>
         <div className="bg-pink-50 rounded-xl shadow p-4 border border-pink-200">
-          <div className="text-lg font-bold text-pink-700 mb-1">{chargeParSite.toFixed(2)}</div>
-          <div className="text-gray-700 text-sm">Charge par site (E)</div>
+          <div className="text-lg font-bold text-pink-700 mb-1">{(gos * 100).toFixed(2)}%</div>
+          <div className="text-gray-700 text-sm">GoS (Grade of Service)</div>
         </div>
         <div className="bg-cyan-50 rounded-xl shadow p-4 border border-cyan-200">
-          <div className="text-lg font-bold text-cyan-700 mb-1">{couvertureParSite}</div>
-          <div className="text-gray-700 text-sm">Couverture/site (km²)</div>
+          <div className="text-lg font-bold text-cyan-700 mb-1">{couvertureParSite} km²</div>
+          <div className="text-gray-700 text-sm">Couverture/site</div>
         </div>
       </div>
 
       {/* Graphiques */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow p-6 border border-blue-100">
-          <h4 className="font-semibold mb-4 text-primary-dark">Répartition des ressources</h4>
+          <h4 className="font-semibold mb-4 text-primary-dark">Paramètres de dimensionnement</h4>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
+              <YAxis />
               <Tooltip />
               <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -192,7 +280,7 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
         </div>
         
         <div className="bg-white rounded-xl shadow p-6 border border-blue-100">
-          <h4 className="font-semibold mb-4 text-primary-dark">Répartition des paramètres</h4>
+          <h4 className="font-semibold mb-4 text-primary-dark">Répartition des services</h4>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
@@ -216,7 +304,7 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex gap-3 mb-4">
         <button
           onClick={() => setShowFormula((v) => !v)}
           className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
@@ -226,9 +314,10 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
         </button>
         <button
           onClick={handleExportPDF}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
         >
-          <span role="img" aria-label="PDF">📄</span> Exporter en PDF
+          <span role="img" aria-label="PDF">📄</span>
+          Export PDF
         </button>
         <button
           onClick={handleSave}
@@ -244,12 +333,12 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
           <div>
             <h5 className="font-bold text-blue-800 mb-2">Formules de dimensionnement GSM :</h5>
             <div className="space-y-2">
-              <div><b>Nombre d&apos;abonnés :</b> <span className="font-mono">N = S × D × (P / 100)</span></div>
-              <div><b>Trafic total :</b> <span className="font-mono">T = N × (t/1000) × a</span></div>
-              <div><b>Trafic avec sécurité :</b> <span className="font-mono">T&apos; = T × Fs</span></div>
-              <div><b>Nombre de TRX :</b> <span className="font-mono">TRX = ⌈T&apos; / C<sub>TRX</sub>⌉</span></div>
-              <div><b>Nombre de sites :</b> <span className="font-mono">Sites = ⌈S / C<sub>site</sub>⌉</span></div>
-              <div><b>Grade of Service :</b> <span className="font-mono">GoS = Erlang-B(T, Canaux)</span></div>
+              <div><b>Nombre d'abonnés :</b> <span className="font-mono">N<sub>abonnés</sub> = Zone × Densité × (Pénétration / 100)</span></div>
+              <div><b>Trafic total :</b> <span className="font-mono">T<sub>total</sub> = N<sub>abonnés</sub> × (Trafic<sub>utilisateur</sub> / 1000) × Activité</span></div>
+              <div><b>Trafic avec sécurité :</b> <span className="font-mono">T&apos; = T<sub>total</sub> × F<sub>s</sub></span></div>
+              <div><b>Nombre de TRX :</b> <span className="font-mono">N<sub>TRX</sub> = ⌈T&apos; / C<sub>TRX</sub>⌉</span></div>
+              <div><b>Nombre de sites :</b> <span className="font-mono">N<sub>sites</sub> = ⌈Zone / Couverture<sub>site</sub>⌉</span></div>
+              <div><b>Grade of Service :</b> <span className="font-mono">GoS = (T<sub>total</sub> / (C<sub>TRX</sub> × N<sub>TRX</sub>)) × 100</span></div>
             </div>
           </div>
           
@@ -258,31 +347,45 @@ const GSMResults: React.FC<GSMResultsProps> = ({ area, density, trafficPerUser, 
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>C<sub>TRX</sub> = {CAPACITE_TRX} Erlangs</div>
               <div>F<sub>s</sub> = {FACTEUR_DE_SECURITE}</div>
-              <div>Canaux/TRX = {NOMBRE_CANAUX_PAR_TRX}</div>
               <div>Efficacité spectrale = {EFFICIENCE_SPECTRALE * 100}%</div>
+              <div>Canaux/TRX = {NOMBRE_CANAUX_PAR_TRX}</div>
+              <div>Couverture urbain = {COUVERTURE_PAR_SITE_URBAIN} km²</div>
+              <div>Couverture rural = {COUVERTURE_PAR_SITE_RURAL} km²</div>
             </div>
           </div>
           
           <div>
-            <h5 className="font-bold text-blue-800 mb-2">Couverture par type de zone :</h5>
+            <h5 className="font-bold text-blue-800 mb-2">Type de zone détecté :</h5>
             <div className="text-xs space-y-1">
-              <div>• Urbain (densité &gt; 3000 hab/km²) : {COUVERTURE_PAR_SITE_URBAIN} km²</div>
-              <div>• Rural (densité &lt; 500 hab/km²) : {COUVERTURE_PAR_SITE_RURAL} km²</div>
-              <div>• Industriel : {COUVERTURE_PAR_SITE_INDUSTRIEL} km²</div>
+              <div>• <b>{density > 3000 ? 'URBAIN' : density < 500 ? 'RURAL' : 'INDUSTRIEL'}</b> : {density} abonnés/km²</div>
+              <div>• Couverture par site : {couvertureParSite} km²</div>
+              <div>• Capacité par TRX : {CAPACITE_TRX} Erlangs</div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Recommandation */}
+      <div className="mb-6 p-4 rounded-xl bg-gray-100 shadow flex items-center gap-3">
+        <span className="text-2xl">💡</span>
+        <div className="text-sm text-gray-700">
+          <strong>Recommandation :</strong> 
+          {gos < 0.02 ? 'Excellent GoS, la qualité de service est optimale.' :
+           gos < 0.05 ? 'Bon GoS, la qualité de service est satisfaisante.' :
+           gos < 0.1 ? 'GoS acceptable, surveiller l\'évolution du trafic.' :
+           'GoS élevé, considérer l\'ajout de TRX ou de sites pour améliorer la qualité.'}
+        </div>
+      </div>
+
       {/* Informations techniques */}
       <div className="text-xs text-gray-500 mt-2 bg-gray-50 rounded-xl shadow p-4 border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div>Capacité TRX : {CAPACITE_TRX} Erlangs</div>
+          <div>Type de zone : {density > 3000 ? 'Urbain' : density < 500 ? 'Rural' : 'Industriel'}</div>
+          <div>Capacité par TRX : {CAPACITE_TRX} Erlangs</div>
           <div>Facteur de sécurité : {FACTEUR_DE_SECURITE}</div>
-          <div>Canaux par TRX : {NOMBRE_CANAUX_PAR_TRX}</div>
           <div>Efficacité spectrale : {EFFICIENCE_SPECTRALE * 100}%</div>
           <div>Couverture par site : {couvertureParSite} km²</div>
-          <div>Type de zone : {density > 3000 ? 'Urbain' : density < 500 ? 'Rural' : 'Industriel'}</div>
+          <div>Densité abonnés : {density} ab/km²</div>
         </div>
       </div>
     </div>

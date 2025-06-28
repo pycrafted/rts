@@ -2,7 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     
     <!-- Métadonnées PWA -->
@@ -11,16 +11,16 @@
     <meta name="author" content="Télécoms Dimensionnement" />
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="./manifest.json" />
     <meta name="theme-color" content="#3b82f6" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Télécoms" />
     
     <!-- Icônes PWA -->
-    <link rel="apple-touch-icon" href="/vite.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/vite.svg" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="./vite.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./vite.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./vite.svg" />
     
     <!-- Préchargement des polices -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,14 +34,14 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
     <script>
       console.log('CSS chargé :', getComputedStyle(document.body).fontFamily);
       
       // Enregistrer le Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
               console.log('Service Worker enregistré avec succès:', registration.scope);
             })
@@ -56,7 +56,7 @@
         requestIdleCallback(() => {
           // Précharger les ressources non critiques
           const preloadLinks = [
-            '/workers/calculations.js'
+            './workers/calculations.js'
           ];
           
           preloadLinks.forEach(href => {

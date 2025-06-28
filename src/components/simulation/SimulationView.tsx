@@ -60,6 +60,8 @@ const SimulationView: React.FC<SimulationViewProps> = ({ isActive }) => {
   const [obstacles, setObstacles] = useState<ObstacleData[]>([]);
   const [diffractionLosses, setDiffractionLosses] = useState<DiffractionLosses>({ total: 0, obstacles: [] });
   const [error, setError] = useState<string | null>(null);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Calcul de la distance entre les antennes
   const distance = useMemo(() => {
@@ -147,10 +149,47 @@ const SimulationView: React.FC<SimulationViewProps> = ({ isActive }) => {
     calculateLinkBudget();
   }, [calculateLinkBudget]);
 
+  // Gestion du mode plein écran
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  // Détection de la sortie du mode plein écran
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   return (
-    <div className="flex h-full">
-      {/* Panneau de contrôle */}
-      <div className="w-1/4 p-4 bg-gray-100 overflow-y-auto">
+    <div className="flex h-full relative">
+      {/* Panneau de contrôle rétractable */}
+      <div className={`
+        ${isPanelCollapsed ? 'w-12' : 'w-80'} 
+        transition-all duration-300 ease-in-out
+        bg-gray-100 border-r border-gray-300
+        flex flex-col
+      `}>
+        {/* Bouton de toggle du panneau */}
+        <button
+          onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+          className="absolute -right-3 top-4 z-10 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors"
+          title={isPanelCollapsed ? "Afficher le panneau" : "Masquer le panneau"}
+        >
+          {isPanelCollapsed ? '→' : '←'}
+        </button>
+
+        {/* Contenu du panneau */}
+        <div className={`${isPanelCollapsed ? 'hidden' : 'block'} p-4 overflow-y-auto flex-1`}>
         {isActive ? <SimulationVisualization setObstacles={setObstacles} /> : <SimulationControls />}
         
         {error && (
@@ -207,14 +246,29 @@ const SimulationView: React.FC<SimulationViewProps> = ({ isActive }) => {
             <div className="flex items-center">
               <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
               <span>100m</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Zone de visualisation 3D */}
-      <div className="w-3/4 h-screen">
-        <Canvas camera={{ position: [0, 15, 25], fov: 60 }}>
+      <div className="flex-1 h-screen relative">
+        {/* Barre d'outils flottante */}
+        <div className="absolute top-4 right-4 z-10 flex gap-2">
+          <button
+            onClick={toggleFullscreen}
+            className="px-3 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+            title="Mode plein écran"
+          >
+            {isFullscreen ? '⛶' : '⛶'}
+          </button>
+        </div>
+
+        <Canvas 
+          camera={{ position: [0, 10, 15], fov: 60 }}
+          className="w-full h-full"
+        >
           <ambientLight intensity={0.6} />
           <directionalLight position={[20, 20, 10]} intensity={1.2} />
           

@@ -9,7 +9,7 @@ interface SidebarProps {
 const navigation = [
   {
     name: 'Dashboard',
-    href: '/dashboard',
+    href: '/',
     icon: '📊',
     description: 'Vue d\'ensemble'
   },
@@ -90,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       <nav className="flex flex-1 flex-col px-3 sm:px-4 py-4 sm:py-6 space-y-1 sm:space-y-2 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href || 
-                          (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+                          (item.href !== '/' && location.pathname.startsWith(item.href));
           
           return (
             <NavLink
@@ -125,22 +125,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           );
         })}
       </nav>
-
-      {/* Footer de la sidebar */}
-      <div className="border-t border-gray-200 p-3 sm:p-4">
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs text-gray-600">👤</span>
-          </div>
-          <div className="flex-1 min-w-0 hidden sm:block">
-            <p className="text-sm font-medium text-gray-900 truncate">Utilisateur</p>
-            <p className="text-xs text-gray-500 truncate">Ingénieur Télécoms</p>
-          </div>
-          <div className="flex-1 min-w-0 sm:hidden">
-            <p className="text-sm font-medium text-gray-900 truncate">Utilisateur</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

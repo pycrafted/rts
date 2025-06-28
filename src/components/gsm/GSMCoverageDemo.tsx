@@ -1,156 +1,44 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import GsmCoverageScene from './GsmCoverageScene';
-
-interface CoverageSettings {
-  coverageRadius: number;
-  obstaclePosition: [number, number, number];
-  obstacleSize: [number, number, number];
-  antennaHeight: number;
-  phonePosition: [number, number, number];
-}
-
-interface SimulationResults {
-  coverageArea: number;
-  coverageVolume: number;
-  obstacleImpact: number;
-  signalStrength: number;
-  attenuationBehindObstacle: number;
-  effectiveCoverageRadius: number;
-  phoneSignalQuality: 'excellent' | 'good' | 'poor' | 'none';
-  phoneDistanceToAntenna: number;
-  phoneDistanceToObstacle: number;
-}
+import { useGSMSimulationStore } from './useGSMSimulationStore';
+import { usePDFExport } from '@/services/pdfExportService';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment } from '@react-three/drei';
 
 const GSMCoverageDemo: React.FC = () => {
-  const [settings, setSettings] = useState<CoverageSettings>({
-    coverageRadius: 5,
-    obstaclePosition: [2, 0, 3],
-    obstacleSize: [1, 2, 1],
-    antennaHeight: 3,
-    phonePosition: [1, 0, 1]
-  });
-
   const [showInfo, setShowInfo] = useState(false);
+  
+  const {
+    settings,
+    results,
+    setCoverageRadius,
+    setObstaclePosition,
+    setObstacleSize,
+    setAntennaHeight,
+    setPhonePosition
+  } = useGSMSimulationStore();
 
-  // Calcul des résultats de simulation
-  const simulationResults = useMemo((): SimulationResults => {
-    const { coverageRadius, obstaclePosition, obstacleSize, antennaHeight, phonePosition } = settings;
-    
-    // Calcul de la zone de couverture (surface)
-    const coverageArea = Math.PI * coverageRadius * coverageRadius;
-    
-    // Calcul du volume de couverture
-    const coverageVolume = (4/3) * Math.PI * coverageRadius * coverageRadius * coverageRadius;
-    
-    // Calcul de l'impact de l'obstacle
-    const distanceToObstacle = Math.sqrt(
-      Math.pow(obstaclePosition[0], 2) + 
-      Math.pow(obstaclePosition[1], 2) + 
-      Math.pow(obstaclePosition[2], 2)
-    );
-    
-    // Atténuation derrière l'obstacle (simulation simplifiée)
-    const obstacleVolume = obstacleSize[0] * obstacleSize[1] * obstacleSize[2];
-    const obstacleImpact = Math.min(100, (obstacleVolume / coverageVolume) * 100);
-    
-    // Force du signal (basée sur la hauteur d'antenne et la distance)
-    const signalStrength = Math.max(0, 100 - (distanceToObstacle * 10) + (antennaHeight * 5));
-    
-    // Atténuation derrière l'obstacle
-    const attenuationBehindObstacle = Math.min(90, obstacleImpact * 2);
-    
-    // Rayon de couverture effectif (considérant l'obstacle)
-    const effectiveCoverageRadius = coverageRadius * (1 - obstacleImpact / 200);
-
-    // Calculs pour le téléphone
-    const antennaPosition: [number, number, number] = [0, antennaHeight, 0];
-    const phoneDistanceToAntenna = Math.sqrt(
-      Math.pow(phonePosition[0] - antennaPosition[0], 2) +
-      Math.pow(phonePosition[1] - antennaPosition[1], 2) +
-      Math.pow(phonePosition[2] - antennaPosition[2], 2)
-    );
-
-    const phoneDistanceToObstacle = Math.sqrt(
-      Math.pow(phonePosition[0] - obstaclePosition[0], 2) +
-      Math.pow(phonePosition[1] - obstaclePosition[1], 2) +
-      Math.pow(phonePosition[2] - obstaclePosition[2], 2)
-    );
-
-    // Qualité du signal du téléphone
-    let phoneSignalQuality: 'excellent' | 'good' | 'poor' | 'none' = 'none';
-    
-    if (phoneDistanceToAntenna <= coverageRadius) {
-      const isBehindObstacle = 
-        phonePosition[2] > obstaclePosition[2] && 
-        Math.abs(phonePosition[0] - obstaclePosition[0]) < obstacleSize[0] / 2 &&
-        Math.abs(phonePosition[1] - obstaclePosition[1]) < obstacleSize[1] / 2;
-
-      if (isBehindObstacle) {
-        const attenuation = Math.max(0.1, 1 - (phoneDistanceToObstacle / coverageRadius));
-        if (attenuation < 0.3) phoneSignalQuality = 'none';
-        else if (attenuation < 0.6) phoneSignalQuality = 'poor';
-        else phoneSignalQuality = 'good';
-      } else {
-        const signalStrength = 1 - (phoneDistanceToAntenna / coverageRadius);
-        if (signalStrength > 0.8) phoneSignalQuality = 'excellent';
-        else if (signalStrength > 0.5) phoneSignalQuality = 'good';
-        else if (signalStrength > 0.2) phoneSignalQuality = 'poor';
-        else phoneSignalQuality = 'none';
-      }
-    }
-    
-    return {
-      coverageArea,
-      coverageVolume,
-      obstacleImpact,
-      signalStrength,
-      attenuationBehindObstacle,
-      effectiveCoverageRadius,
-      phoneSignalQuality,
-      phoneDistanceToAntenna,
-      phoneDistanceToObstacle
-    };
-  }, [settings]);
+  const { exportDashboardReport } = usePDFExport();
 
   const handleRadiusChange = (radius: number) => {
-    setSettings(prev => ({ ...prev, coverageRadius: radius }));
+    setCoverageRadius(radius);
   };
 
   const handleObstaclePositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    setSettings(prev => ({
-      ...prev,
-      obstaclePosition: [
-        axis === 'x' ? value : prev.obstaclePosition[0],
-        axis === 'y' ? value : prev.obstaclePosition[1],
-        axis === 'z' ? value : prev.obstaclePosition[2]
-      ]
-    }));
+    setObstaclePosition(axis, value);
   };
 
   const handleObstacleSizeChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    setSettings(prev => ({
-      ...prev,
-      obstacleSize: [
-        axis === 'x' ? value : prev.obstacleSize[0],
-        axis === 'y' ? value : prev.obstacleSize[1],
-        axis === 'z' ? value : prev.obstacleSize[2]
-      ]
-    }));
+    setObstacleSize(axis, value);
   };
 
   const handleAntennaHeightChange = (height: number) => {
-    setSettings(prev => ({ ...prev, antennaHeight: height }));
+    setAntennaHeight(height);
   };
 
   const handlePhonePositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
-    setSettings(prev => ({
-      ...prev,
-      phonePosition: [
-        axis === 'x' ? value : prev.phonePosition[0],
-        axis === 'y' ? value : prev.phonePosition[1],
-        axis === 'z' ? value : prev.phonePosition[2]
-      ]
-    }));
+    setPhonePosition(axis, value);
   };
 
   const getSignalQualityColor = (quality: string) => {
@@ -173,6 +61,110 @@ const GSMCoverageDemo: React.FC = () => {
     }
   };
 
+  // Fonction d'export PDF
+  const handleExportPDF = async () => {
+    try {
+      console.log('📊 Export PDF complet en cours...');
+      
+      // Récupérer toutes les données du dashboard
+      const gsmHistory = JSON.parse(localStorage.getItem('gsm_history') || '[]');
+      const umtsHistory = JSON.parse(localStorage.getItem('umts_history') || '[]');
+      const hertzienHistory = JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+      const optiqueHistory = JSON.parse(localStorage.getItem('optique_history') || '[]');
+
+      // Calculer les métriques globales
+      const totalGsmCalculs = gsmHistory.length;
+      const totalUmtsCalculs = umtsHistory.length;
+      const totalHertzienCalculs = hertzienHistory.length;
+      const totalOptiqueCalculs = optiqueHistory.length;
+
+      const totalGsmDistance = gsmHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalUmtsDistance = umtsHistory.reduce((sum: number, item: any) => sum + (item.area || 0), 0);
+      const totalHertzienDistance = hertzienHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalOptiqueDistance = optiqueHistory.reduce((sum: number, item: any) => sum + (item.params?.length || 0), 0);
+
+      const totalGsmMarge = gsmHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalUmtsMarge = umtsHistory.reduce((sum: number, item: any) => sum + (item.gos || 0), 0);
+      const totalHertzienMarge = hertzienHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalOptiqueMarge = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const totalGsmBilan = gsmHistory.reduce((sum: number, item: any) => sum + (item.nbSites || 0), 0);
+      const totalUmtsBilan = umtsHistory.reduce((sum: number, item: any) => sum + (item.nbNodeB || 0), 0);
+      const totalHertzienBilan = hertzienHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalOptiqueBilan = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const allData = {
+        gsm: {
+          history: gsmHistory,
+          metrics: {
+            totalCalculs: totalGsmCalculs,
+            totalDistance: totalGsmDistance,
+            totalMarge: totalGsmMarge,
+            totalBilan: totalGsmBilan,
+            moyenneDistance: totalGsmCalculs > 0 ? totalGsmDistance / totalGsmCalculs : 0,
+            moyenneMarge: totalGsmCalculs > 0 ? totalGsmMarge / totalGsmCalculs : 0,
+            moyenneBilan: totalGsmCalculs > 0 ? totalGsmBilan / totalGsmCalculs : 0
+          }
+        },
+        umts: {
+          history: umtsHistory,
+          metrics: {
+            totalCalculs: totalUmtsCalculs,
+            totalDistance: totalUmtsDistance,
+            totalMarge: totalUmtsMarge,
+            totalBilan: totalUmtsBilan,
+            moyenneDistance: totalUmtsCalculs > 0 ? totalUmtsDistance / totalUmtsCalculs : 0,
+            moyenneMarge: totalUmtsCalculs > 0 ? totalUmtsMarge / totalUmtsCalculs : 0,
+            moyenneBilan: totalUmtsCalculs > 0 ? totalUmtsBilan / totalUmtsCalculs : 0
+          }
+        },
+        hertzien: {
+          history: hertzienHistory,
+          metrics: {
+            totalCalculs: totalHertzienCalculs,
+            totalDistance: totalHertzienDistance,
+            totalMarge: totalHertzienMarge,
+            totalBilan: totalHertzienBilan,
+            moyenneDistance: totalHertzienCalculs > 0 ? totalHertzienDistance / totalHertzienCalculs : 0,
+            moyenneMarge: totalHertzienCalculs > 0 ? totalHertzienMarge / totalHertzienCalculs : 0,
+            moyenneBilan: totalHertzienCalculs > 0 ? totalHertzienBilan / totalHertzienCalculs : 0
+          }
+        },
+        optique: {
+          history: optiqueHistory,
+          metrics: {
+            totalCalculs: totalOptiqueCalculs,
+            totalDistance: totalOptiqueDistance,
+            totalMarge: totalOptiqueMarge,
+            totalBilan: totalOptiqueBilan,
+            moyenneDistance: totalOptiqueCalculs > 0 ? totalOptiqueDistance / totalOptiqueCalculs : 0,
+            moyenneMarge: totalOptiqueCalculs > 0 ? totalOptiqueMarge / totalOptiqueCalculs : 0,
+            moyenneBilan: totalOptiqueCalculs > 0 ? totalOptiqueBilan / totalOptiqueCalculs : 0
+          }
+        },
+        global: {
+          totalCalculs: totalGsmCalculs + totalUmtsCalculs + totalHertzienCalculs + totalOptiqueCalculs,
+          totalDistance: totalGsmDistance + totalUmtsDistance + totalHertzienDistance + totalOptiqueDistance,
+          totalMarge: totalGsmMarge + totalUmtsMarge + totalHertzienMarge + totalOptiqueMarge,
+          totalBilan: totalGsmBilan + totalUmtsBilan + totalHertzienBilan + totalOptiqueBilan
+        }
+      };
+
+      const result = await exportDashboardReport(allData);
+      
+      if (result.success) {
+        console.log('✅ Export PDF réussi:', result.filePath);
+        alert(`PDF exporté avec succès !\nFichier: ${result.filePath}`);
+      } else {
+        console.error('❌ Échec de l\'export PDF:', result.error);
+        alert(`Erreur lors de l'export PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF. Vérifiez la console pour plus de détails.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -183,12 +175,21 @@ const GSMCoverageDemo: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900">Simulation de Couverture GSM 3D</h1>
               <p className="text-gray-600 mt-1">Visualisez la couverture d'une antenne GSM et l'impact des obstacles</p>
             </div>
-            <button
-              onClick={() => setShowInfo(!showInfo)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {showInfo ? 'Masquer' : 'Afficher'} les informations
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportPDF}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                title="Exporter le rapport PDF"
+              >
+                📊 Export PDF
+              </button>
+              <button
+                onClick={() => setShowInfo(!showInfo)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                {showInfo ? 'Masquer' : 'Afficher'} les informations
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -433,22 +434,22 @@ const GSMCoverageDemo: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Résultats de Simulation</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Phone Signal Quality */}
-                <div className={`p-4 rounded-lg ${getSignalQualityColor(simulationResults.phoneSignalQuality)}`}>
+                <div className={`p-4 rounded-lg ${getSignalQualityColor(results.phoneSignalQuality)}`}>
                   <h3 className="font-medium mb-2 flex items-center gap-2">
-                    {getSignalQualityIcon(simulationResults.phoneSignalQuality)} Signal Téléphone
+                    {getSignalQualityIcon(results.phoneSignalQuality)} Signal Téléphone
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Qualité:</span>
-                      <span className="font-medium capitalize">{simulationResults.phoneSignalQuality}</span>
+                      <span className="font-medium capitalize">{results.phoneSignalQuality}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Distance antenne:</span>
-                      <span className="font-medium">{simulationResults.phoneDistanceToAntenna.toFixed(1)}m</span>
+                      <span className="font-medium">{results.phoneDistanceToAntenna.toFixed(1)}m</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Distance obstacle:</span>
-                      <span className="font-medium">{simulationResults.phoneDistanceToObstacle.toFixed(1)}m</span>
+                      <span className="font-medium">{results.phoneDistanceToObstacle.toFixed(1)}m</span>
                     </div>
                   </div>
                 </div>
@@ -459,15 +460,15 @@ const GSMCoverageDemo: React.FC = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Zone de couverture:</span>
-                      <span className="font-medium">{simulationResults.coverageArea.toFixed(1)} m²</span>
+                      <span className="font-medium">{results.coverageArea.toFixed(1)} m²</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Volume de couverture:</span>
-                      <span className="font-medium">{simulationResults.coverageVolume.toFixed(1)} m³</span>
+                      <span className="font-medium">{results.coverageVolume.toFixed(1)} m³</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Rayon effectif:</span>
-                      <span className="font-medium">{simulationResults.effectiveCoverageRadius.toFixed(1)} m</span>
+                      <span className="font-medium">{results.effectiveCoverageRadius.toFixed(1)} m</span>
                     </div>
                   </div>
                 </div>
@@ -478,18 +479,18 @@ const GSMCoverageDemo: React.FC = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Force du signal:</span>
-                      <span className="font-medium">{simulationResults.signalStrength.toFixed(0)}%</span>
+                      <span className="font-medium">{results.signalStrength.toFixed(0)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-green-500 h-2 rounded-full" 
-                        style={{ width: `${Math.max(0, Math.min(100, simulationResults.signalStrength))}%` }}
+                        style={{ width: `${Math.max(0, Math.min(100, results.signalStrength))}%` }}
                       ></div>
                     </div>
                     <div className="text-xs text-gray-500">
-                      {simulationResults.signalStrength > 80 ? 'Excellent' : 
-                       simulationResults.signalStrength > 60 ? 'Bon' : 
-                       simulationResults.signalStrength > 40 ? 'Moyen' : 'Faible'}
+                      {results.signalStrength > 80 ? 'Excellent' : 
+                       results.signalStrength > 60 ? 'Bon' : 
+                       results.signalStrength > 40 ? 'Moyen' : 'Faible'}
                     </div>
                   </div>
                 </div>
@@ -500,16 +501,16 @@ const GSMCoverageDemo: React.FC = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Impact sur couverture:</span>
-                      <span className="font-medium">{simulationResults.obstacleImpact.toFixed(1)}%</span>
+                      <span className="font-medium">{results.obstacleImpact.toFixed(1)}%</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Atténuation derrière:</span>
-                      <span className="font-medium">{simulationResults.attenuationBehindObstacle.toFixed(0)}%</span>
+                      <span className="font-medium">{results.attenuationBehindObstacle.toFixed(0)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-red-500 h-2 rounded-full" 
-                        style={{ width: `${Math.min(100, simulationResults.obstacleImpact)}%` }}
+                        style={{ width: `${Math.min(100, results.obstacleImpact)}%` }}
                       ></div>
                     </div>
                   </div>
@@ -536,16 +537,16 @@ const GSMCoverageDemo: React.FC = () => {
                   <div>
                     <h4 className="font-medium text-gray-800 mb-2">Recommandations</h4>
                     <ul className="space-y-1 text-gray-600">
-                      {simulationResults.phoneSignalQuality === 'none' && (
+                      {results.phoneSignalQuality === 'none' && (
                         <li>• ⚠️ Déplacer le téléphone dans la zone de couverture</li>
                       )}
-                      {simulationResults.phoneSignalQuality === 'poor' && (
+                      {results.phoneSignalQuality === 'poor' && (
                         <li>• ⚠️ Le téléphone reçoit un signal faible</li>
                       )}
-                      {simulationResults.phoneDistanceToAntenna > settings.coverageRadius * 0.8 && (
+                      {results.phoneDistanceToAntenna > settings.coverageRadius * 0.8 && (
                         <li>• 💡 Rapprocher le téléphone de l'antenne</li>
                       )}
-                      <li>• ✅ Qualité signal téléphone: {simulationResults.phoneSignalQuality}</li>
+                      <li>• ✅ Qualité signal téléphone: {results.phoneSignalQuality}</li>
                     </ul>
                   </div>
                 </div>

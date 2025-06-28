@@ -11,11 +11,7 @@ interface HeaderProps {
 
 const getPageTitle = (pathname: string) => {
   const pathMap: { [key: string]: string } = {
-    '/dashboard': 'Dashboard',
-    '/gsm': 'Dimensionnement GSM',
-    '/umts': 'Dimensionnement UMTS',
-    '/hertzien': 'Liaisons Hertziennes',
-    '/optique': 'Liaisons Optiques',
+    '/': 'Dashboard',
     '/simulation': 'Simulations',
     '/simulation/optique': 'Simulation Optique',
     '/simulation/hertzien': 'Simulation Hertzien',
@@ -23,12 +19,12 @@ const getPageTitle = (pathname: string) => {
     '/simulation/umts': 'Simulation UMTS',
   };
   
-  return pathMap[pathname] || 'Page';
+  return pathMap[pathname] || '';
 };
 
 const getBreadcrumbs = (pathname: string) => {
   const segments = pathname.split('/').filter(Boolean);
-  const breadcrumbs = [{ name: 'Accueil', href: '/dashboard' }];
+  const breadcrumbs: { name: string; href: string }[] = [];
   
   let currentPath = '';
   segments.forEach((segment, _index) => {
@@ -136,15 +132,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
               {/* Actions rapides */}
               <div className="flex items-center space-x-1 sm:space-x-2">
-                <Button
-                  variant={darkMode ? "ghost" : "outline"}
-                  size="sm"
-                  icon="📊"
-                  className="hidden sm:inline-flex"
-                >
-                  Export
-                </Button>
-                
                 <Button
                   variant={darkMode ? "ghost" : "outline"}
                   size="sm"

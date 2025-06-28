@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { usePDFExport } from '../../services/pdfExportService';
 
 interface UMTSResultsProps {
   area: number;
@@ -10,6 +9,7 @@ interface UMTSResultsProps {
   data: number;
   video: number;
   load: number;
+  onSave?: () => void;
 }
 
 // Paramètres techniques UMTS plus précis
@@ -23,7 +23,9 @@ const COUVERTURE_CELLULE_URBAIN = 1; // km²
 const COUVERTURE_CELLULE_RURAL = 5; // km²
 const COUVERTURE_CELLULE_INDOOR = 0.5; // km²
 
-const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, video, load }) => {
+const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, video, load, onSave }) => {
+  const { exportDashboardReport } = usePDFExport();
+  
   // Calculs améliorés avec formules techniques UMTS
   const debitVoix = users * voice;
   const debitData = users * data;
@@ -95,36 +97,114 @@ const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, vid
 
   const [showFormula, setShowFormula] = useState(false);
 
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Résultats du dimensionnement UMTS', 14, 16);
-    autoTable(doc, {
-      startY: 24,
-      head: [['Paramètre', 'Valeur', 'Unité']],
-      body: [
-        ['Débit total voix', debitVoix.toLocaleString(), 'kbps'],
-        ['Débit total data', debitData.toLocaleString(), 'kbps'],
-        ['Débit total vidéo', debitVideo.toLocaleString(), 'kbps'],
-        ['Débit total', debitTotal.toLocaleString(), 'kbps'],
-        ['Débit avec sécurité', debitAvecSecurite.toLocaleString(), 'kbps'],
-        ['Capacité par cellule', capaciteCellule.toLocaleString(), 'kbps'],
-        ['Capacité utile par cellule', capaciteUtileCellule.toLocaleString(undefined, { maximumFractionDigits: 2 }), 'kbps'],
-        ['Nombre de cellules', nbCellules.toString(), 'cellules'],
-        ['Nombre de NodeB', nbNodeB.toString(), 'NodeB'],
-        ['Densité utilisateurs', densiteUtilisateurs.toLocaleString(undefined, { maximumFractionDigits: 1 }), 'utilisateurs/km²'],
-        ['Charge par cellule', chargeParCellule.toLocaleString(undefined, { maximumFractionDigits: 2 }), 'kbps/cellule'],
-        ['Couverture par NodeB', couvertureParNodeB.toLocaleString(undefined, { maximumFractionDigits: 1 }), 'km²'],
-        ['Type de zone', typeZone, ''],
-        ['Qualité de service (GoS)', gos.toLocaleString(undefined, { maximumFractionDigits: 2 }), '%'],
-      ],
-    });
-    doc.save('resultats_umts.pdf');
+  const handleExportPDF = async () => {
+    try {
+      console.log('📊 Export PDF complet en cours...');
+      
+      // Récupérer toutes les données du dashboard
+      const gsmHistory = JSON.parse(localStorage.getItem('gsm_history') || '[]');
+      const umtsHistory = JSON.parse(localStorage.getItem('umts_history') || '[]');
+      const hertzienHistory = JSON.parse(localStorage.getItem('hertzien_history') || '[]');
+      const optiqueHistory = JSON.parse(localStorage.getItem('optique_history') || '[]');
+
+      // Calculer les métriques globales
+      const totalGsmCalculs = gsmHistory.length;
+      const totalUmtsCalculs = umtsHistory.length;
+      const totalHertzienCalculs = hertzienHistory.length;
+      const totalOptiqueCalculs = optiqueHistory.length;
+
+      const totalGsmDistance = gsmHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalUmtsDistance = umtsHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalHertzienDistance = hertzienHistory.reduce((sum: number, item: any) => sum + (item.distance || 0), 0);
+      const totalOptiqueDistance = optiqueHistory.reduce((sum: number, item: any) => sum + (item.params?.length || 0), 0);
+
+      const totalGsmMarge = gsmHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalUmtsMarge = umtsHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalHertzienMarge = hertzienHistory.reduce((sum: number, item: any) => sum + (item.marge || 0), 0);
+      const totalOptiqueMarge = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const totalGsmBilan = gsmHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalUmtsBilan = umtsHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalHertzienBilan = hertzienHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+      const totalOptiqueBilan = optiqueHistory.reduce((sum: number, item: any) => sum + (item.bilan || 0), 0);
+
+      const allData = {
+        gsm: {
+          history: gsmHistory,
+          metrics: {
+            totalCalculs: totalGsmCalculs,
+            totalDistance: totalGsmDistance,
+            totalMarge: totalGsmMarge,
+            totalBilan: totalGsmBilan,
+            moyenneDistance: totalGsmCalculs > 0 ? totalGsmDistance / totalGsmCalculs : 0,
+            moyenneMarge: totalGsmCalculs > 0 ? totalGsmMarge / totalGsmCalculs : 0,
+            moyenneBilan: totalGsmCalculs > 0 ? totalGsmBilan / totalGsmCalculs : 0
+          }
+        },
+        umts: {
+          history: umtsHistory,
+          metrics: {
+            totalCalculs: totalUmtsCalculs,
+            totalDistance: totalUmtsDistance,
+            totalMarge: totalUmtsMarge,
+            totalBilan: totalUmtsBilan,
+            moyenneDistance: totalUmtsCalculs > 0 ? totalUmtsDistance / totalUmtsCalculs : 0,
+            moyenneMarge: totalUmtsCalculs > 0 ? totalUmtsMarge / totalUmtsCalculs : 0,
+            moyenneBilan: totalUmtsCalculs > 0 ? totalUmtsBilan / totalUmtsCalculs : 0
+          }
+        },
+        hertzien: {
+          history: hertzienHistory,
+          metrics: {
+            totalCalculs: totalHertzienCalculs,
+            totalDistance: totalHertzienDistance,
+            totalMarge: totalHertzienMarge,
+            totalBilan: totalHertzienBilan,
+            moyenneDistance: totalHertzienCalculs > 0 ? totalHertzienDistance / totalHertzienCalculs : 0,
+            moyenneMarge: totalHertzienCalculs > 0 ? totalHertzienMarge / totalHertzienCalculs : 0,
+            moyenneBilan: totalHertzienCalculs > 0 ? totalHertzienBilan / totalHertzienCalculs : 0
+          }
+        },
+        optique: {
+          history: optiqueHistory,
+          metrics: {
+            totalCalculs: totalOptiqueCalculs,
+            totalDistance: totalOptiqueDistance,
+            totalMarge: totalOptiqueMarge,
+            totalBilan: totalOptiqueBilan,
+            moyenneDistance: totalOptiqueCalculs > 0 ? totalOptiqueDistance / totalOptiqueCalculs : 0,
+            moyenneMarge: totalOptiqueCalculs > 0 ? totalOptiqueMarge / totalOptiqueCalculs : 0,
+            moyenneBilan: totalOptiqueCalculs > 0 ? totalOptiqueBilan / totalOptiqueCalculs : 0
+          }
+        },
+        global: {
+          totalCalculs: totalGsmCalculs + totalUmtsCalculs + totalHertzienCalculs + totalOptiqueCalculs,
+          totalDistance: totalGsmDistance + totalUmtsDistance + totalHertzienDistance + totalOptiqueDistance,
+          totalMarge: totalGsmMarge + totalUmtsMarge + totalHertzienMarge + totalOptiqueMarge,
+          totalBilan: totalGsmBilan + totalUmtsBilan + totalHertzienBilan + totalOptiqueBilan
+        }
+      };
+
+      const result = await exportDashboardReport(allData);
+      
+      if (result.success) {
+        console.log('✅ Export PDF réussi:', result.filePath);
+        alert(`PDF exporté avec succès !\nFichier: ${result.filePath}`);
+      } else {
+        console.error('❌ Échec de l\'export PDF:', result.error);
+        alert(`Erreur lors de l'export PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export PDF:', error);
+      alert('Erreur lors de l\'export PDF. Vérifiez la console pour plus de détails.');
+    }
   };
 
   const handleSave = () => {
     const history = JSON.parse(localStorage.getItem('umts_history') || '[]');
     history.unshift({
       date: new Date().toISOString(),
+      nbUtilisateurs: users,
       debitVoix,
       debitData,
       debitVideo,
@@ -142,7 +222,13 @@ const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, vid
       params: { area, users, voice, data, video, load },
     });
     localStorage.setItem('umts_history', JSON.stringify(history.slice(0, 10)));
-    alert('Résultat UMTS sauvegardé !');
+    
+    // Déclencher un événement personnalisé pour notifier la mise à jour
+    window.dispatchEvent(new CustomEvent('umtsHistoryUpdated'));
+    
+    if (onSave) {
+      onSave();
+    }
   };
 
   // Recommandations améliorées
@@ -164,54 +250,52 @@ const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, vid
   }
 
   return (
-    <div className="mt-8 w-full">
+    <div className="mt-8">
       <h3 className="text-xl font-bold mb-6 text-primary-dark">Résultats du dimensionnement UMTS</h3>
-      
-      {/* Métriques principales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-blue-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow border border-blue-200">
-          <span className="text-2xl font-bold text-primary mb-1">{debitTotal.toLocaleString()}</span>
-          <span className="text-gray-700 text-sm font-medium text-center">Débit total (kbps)</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="bg-blue-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow">
+          <span className="text-3xl font-bold text-primary mb-1">{nbCellules}</span>
+          <span className="text-gray-700 text-sm font-medium">Nombre de cellules</span>
         </div>
-        <div className="bg-green-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow border border-green-200">
-          <span className="text-2xl font-bold text-green-700 mb-1">{nbCellules}</span>
-          <span className="text-gray-700 text-sm font-medium text-center">Nombre de cellules</span>
+        <div className="bg-green-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow">
+          <span className="text-3xl font-bold text-green-700 mb-1">{nbNodeB}</span>
+          <span className="text-gray-700 text-sm font-medium">Nombre de NodeB</span>
         </div>
-        <div className="bg-yellow-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow border border-yellow-200">
-          <span className="text-2xl font-bold text-yellow-600 mb-1">{nbNodeB}</span>
-          <span className="text-gray-700 text-sm font-medium text-center">Nombre de NodeB</span>
+        <div className="bg-purple-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow">
+          <span className="text-3xl font-bold text-purple-700 mb-1">{capaciteCellule}</span>
+          <span className="text-gray-700 text-sm font-medium">Capacité cellule (kbps)</span>
         </div>
-        <div className="bg-purple-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow border border-purple-200">
-          <span className="text-2xl font-bold text-purple-700 mb-1">{capaciteUtileCellule.toFixed(0)}</span>
-          <span className="text-gray-700 text-sm font-medium text-center">Capacité utile/cellule (kbps)</span>
+        <div className="bg-yellow-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow">
+          <span className="text-3xl font-bold text-yellow-600 mb-1">{capaciteUtileCellule.toFixed(0)}</span>
+          <span className="text-gray-700 text-sm font-medium">Capacité utile (kbps)</span>
+        </div>
+        <div className="bg-indigo-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow">
+          <span className="text-3xl font-bold text-indigo-700 mb-1">{debitTotal.toFixed(0)}</span>
+          <span className="text-gray-700 text-sm font-medium">Débit total (kbps)</span>
+        </div>
+        <div className="bg-pink-50 rounded-xl shadow p-5 flex flex-col items-center hover:shadow-lg transition-shadow">
+          <span className="text-3xl font-bold text-pink-700 mb-1">{gos.toFixed(1)}</span>
+          <span className="text-gray-700 text-sm font-medium">Grade de service (%)</span>
         </div>
       </div>
-
+      
       {/* Métriques secondaires */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-orange-50 rounded-xl shadow p-4 border border-orange-200">
-          <div className="text-lg font-bold text-orange-700 mb-1">{debitVoix.toLocaleString()}</div>
-          <div className="text-gray-700 text-sm">Débit voix (kbps)</div>
-        </div>
-        <div className="bg-indigo-50 rounded-xl shadow p-4 border border-indigo-200">
-          <div className="text-lg font-bold text-indigo-700 mb-1">{debitData.toLocaleString()}</div>
-          <div className="text-gray-700 text-sm">Débit data (kbps)</div>
-        </div>
-        <div className="bg-red-50 rounded-xl shadow p-4 border border-red-200">
-          <div className="text-lg font-bold text-red-700 mb-1">{debitVideo.toLocaleString()}</div>
-          <div className="text-gray-700 text-sm">Débit vidéo (kbps)</div>
+          <div className="text-lg font-bold text-orange-700 mb-1">{densiteUtilisateurs.toFixed(1)}</div>
+          <div className="text-gray-700 text-sm">Densité utilisateurs (u/km²)</div>
         </div>
         <div className="bg-teal-50 rounded-xl shadow p-4 border border-teal-200">
-          <div className="text-lg font-bold text-teal-700 mb-1">{densiteUtilisateurs.toFixed(1)}</div>
-          <div className="text-gray-700 text-sm">Densité (util/km²)</div>
-        </div>
-        <div className="bg-pink-50 rounded-xl shadow p-4 border border-pink-200">
-          <div className="text-lg font-bold text-pink-700 mb-1">{chargeParCellule.toFixed(0)}</div>
-          <div className="text-gray-700 text-sm">Charge/cellule (kbps)</div>
+          <div className="text-lg font-bold text-teal-700 mb-1">{chargeParCellule.toFixed(0)}</div>
+          <div className="text-gray-700 text-sm">Charge par cellule (kbps)</div>
         </div>
         <div className="bg-cyan-50 rounded-xl shadow p-4 border border-cyan-200">
-          <div className="text-lg font-bold text-cyan-700 mb-1">{gos.toFixed(1)}%</div>
-          <div className="text-gray-700 text-sm">GoS (Grade of Service)</div>
+          <div className="text-lg font-bold text-cyan-700 mb-1">{couvertureParNodeB.toFixed(1)}</div>
+          <div className="text-gray-700 text-sm">Couverture par NodeB (km²)</div>
+        </div>
+        <div className="bg-emerald-50 rounded-xl shadow p-4 border border-emerald-200">
+          <div className="text-lg font-bold text-emerald-700 mb-1">{typeZone}</div>
+          <div className="text-gray-700 text-sm">Type de zone</div>
         </div>
       </div>
 
@@ -223,15 +307,15 @@ const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, vid
             <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis />
+              <YAxis allowDecimals={true} />
               <Tooltip />
-              <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="value" fill="#10B981" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
         
         <div className="bg-white rounded-xl shadow p-6 border border-blue-100">
-          <h4 className="font-semibold mb-4 text-primary-dark">Répartition des services</h4>
+          <h4 className="font-semibold mb-4 text-primary-dark">Répartition des débits</h4>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
@@ -244,7 +328,7 @@ const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, vid
                 fill="#8884d8"
                 dataKey="value"
               >
-                {pieData.map((_, index) => (
+                {pieData.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -254,66 +338,71 @@ const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, vid
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <button
-          onClick={() => setShowFormula((v) => !v)}
-          className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
-        >
-          <span role="img" aria-label="Formule">🧮</span>
-          {showFormula ? 'Masquer les formules' : 'Voir les formules'}
-        </button>
-        <button
-          onClick={handleExportPDF}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-        >
-          <span role="img" aria-label="PDF">📄</span> Exporter en PDF
-        </button>
-        <button
-          onClick={handleSave}
-          className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
-        >
-          <span role="img" aria-label="Sauvegarder">💾</span> Sauvegarder
-        </button>
-      </div>
-
-      {/* Formules détaillées */}
-      {showFormula && (
-        <div className="mb-4 p-6 bg-blue-50 border-l-4 border-blue-400 rounded-xl shadow text-sm space-y-4 border border-blue-200">
-          <div>
-            <h5 className="font-bold text-blue-800 mb-2">Formules de dimensionnement UMTS :</h5>
-            <div className="space-y-2">
-              <div><b>Débit total :</b> <span className="font-mono">D<sub>total</sub> = N × (D<sub>voix</sub> + D<sub>data</sub> + D<sub>vidéo</sub>)</span></div>
-              <div><b>Débit avec sécurité :</b> <span className="font-mono">D&apos; = D<sub>total</sub> × F<sub>s</sub></span></div>
-              <div><b>Capacité utile par cellule :</b> <span className="font-mono">C<sub>utile</sub> = C<sub>cellule</sub> × F<sub>charge</sub> × E<sub>spectrale</sub></span></div>
-              <div><b>Nombre de cellules :</b> <span className="font-mono">N<sub>cellules</sub> = ⌈D&apos; / C<sub>utile</sub>⌉</span></div>
-              <div><b>Nombre de NodeB :</b> <span className="font-mono">N<sub>NodeB</sub> = ⌈N<sub>cellules</sub> / 3⌉</span></div>
-              <div><b>Grade of Service :</b> <span className="font-mono">GoS = (D<sub>total</sub> / (C<sub>utile</sub> × N<sub>cellules</sub>)) × 100</span></div>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-bold text-blue-800 mb-2">Paramètres techniques :</h5>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>C<sub>urbain</sub> = {CAPACITE_CELLULE_URBAIN} kbps</div>
-              <div>C<sub>rural</sub> = {CAPACITE_CELLULE_RURAL} kbps</div>
-              <div>C<sub>indoor</sub> = {CAPACITE_CELLULE_INDOOR} kbps</div>
-              <div>F<sub>s</sub> = {FACTEUR_DE_SECURITE}</div>
-              <div>E<sub>spectrale</sub> = {EFFICIENCE_SPECTRALE * 100}%</div>
-              <div>Secteurs/NodeB = {SECTEURS_PAR_NODEB}</div>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-bold text-blue-800 mb-2">Type de zone détecté :</h5>
-            <div className="text-xs space-y-1">
-              <div>• <b>{typeZone.toUpperCase()}</b> : {densiteUtilisateurs.toFixed(1)} utilisateurs/km²</div>
-              <div>• Capacité par cellule : {capaciteCellule.toLocaleString()} kbps</div>
-              <div>• Couverture par cellule : {couvertureCellule} km²</div>
-            </div>
-          </div>
+      {/* Formule */}
+      <div className="mb-6">
+        <div className="flex gap-3 mb-4">
+          <button
+            onClick={() => setShowFormula((v) => !v)}
+            className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
+          >
+            <span role="img" aria-label="Formule">🧮</span>
+            {showFormula ? 'Masquer la formule' : 'Voir la formule'}
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-200 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            <span role="img" aria-label="PDF">📄</span>
+            Export PDF
+          </button>
+          <button
+            onClick={handleSave}
+            className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-light"
+          >
+            <span role="img" aria-label="Sauvegarder">💾</span> Sauvegarder
+          </button>
         </div>
-      )}
+        {showFormula && (
+          <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-xl shadow text-sm">
+            <h5 className="font-bold text-blue-800 mb-2">Formules du dimensionnement UMTS :</h5>
+            <div className="space-y-3">
+              <div>
+                <b>1. Débit total :</b><br/>
+                <span className="font-mono">D<sub>total</sub> = N<sub>users</sub> × (D<sub>voice</sub> + D<sub>data</sub> + D<sub>video</sub>)</span><br/>
+                où <b>N<sub>users</sub></b> = nombre d'utilisateurs, <b>D<sub>voice</sub></b> = débit voix, <b>D<sub>data</sub></b> = débit data, <b>D<sub>video</sub></b> = débit vidéo
+              </div>
+              <div>
+                <b>2. Capacité utile cellule :</b><br/>
+                <span className="font-mono">C<sub>utile</sub> = C<sub>cellule</sub> × facteur<sub>charge</sub> × efficacité<sub>spectrale</sub></span><br/>
+                où <b>C<sub>cellule</sub></b> = capacité théorique, <b>facteur<sub>charge</sub></b> = charge/100, <b>efficacité<sub>spectrale</sub></b> = 0.75
+              </div>
+              <div>
+                <b>3. Nombre de cellules :</b><br/>
+                <span className="font-mono">N<sub>cellules</sub> = ⌈(D<sub>total</sub> × facteur<sub>sécurité</sub>) / C<sub>utile</sub>⌉</span><br/>
+                où <b>facteur<sub>sécurité</sub></b> = 1.3 (30% de marge)
+              </div>
+              <div>
+                <b>4. Nombre de NodeB :</b><br/>
+                <span className="font-mono">N<sub>NodeB</sub> = ⌈N<sub>cellules</sub> / secteurs<sub>par</sub><sub>NodeB</sub>⌉</span><br/>
+                où <b>secteurs<sub>par</sub><sub>NodeB</sub></b> = 3 (tri-secteur standard)
+              </div>
+              <div>
+                <b>5. Grade de service (GoS) :</b><br/>
+                <span className="font-mono">GoS = min(trafic / capacité, 1) × 100</span><br/>
+                Indicateur de qualité de service en pourcentage
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <b>Capacités par type de zone :</b>
+              <ul className="mt-1 space-y-1 text-xs">
+                <li>• Urbain : 2048 kbps (densité élevée)</li>
+                <li>• Rural : 5120 kbps (densité faible)</li>
+                <li>• Indoor : 1024 kbps (environnement fermé)</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Recommandation */}
       <div className={`mb-6 p-4 rounded-xl shadow flex items-center gap-3 ${
@@ -326,18 +415,6 @@ const UMTSResults: React.FC<UMTSResultsProps> = ({ area, users, voice, data, vid
            niveauRecommandation === 'warning' ? '⚡' : '✅'}
         </span>
         <div className="text-sm text-gray-700"><strong>Recommandation :</strong> {recommandation}</div>
-      </div>
-
-      {/* Informations techniques */}
-      <div className="text-xs text-gray-500 mt-2 bg-gray-50 rounded-xl shadow p-4 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div>Type de zone : {typeZone}</div>
-          <div>Capacité par cellule : {capaciteCellule.toLocaleString()} kbps</div>
-          <div>Facteur de sécurité : {FACTEUR_DE_SECURITE}</div>
-          <div>Efficacité spectrale : {EFFICIENCE_SPECTRALE * 100}%</div>
-          <div>Couverture par cellule : {couvertureCellule} km²</div>
-          <div>Densité utilisateurs : {densiteUtilisateurs.toFixed(1)} util/km²</div>
-        </div>
       </div>
     </div>
   );

@@ -32,6 +32,8 @@ export interface UMTSSimulationState {
   updateResults: () => void;
   generateUserPositions: () => void;
   resetToDefaults: () => void;
+  loadFromStorage: () => Promise<void>;
+  saveToStorage: () => Promise<void>;
 }
 
 // Cache pour les calculs
@@ -216,9 +218,122 @@ export const useUMTSSimulationStore = create<UMTSSimulationState>()(
         numberOfNodeBsRequired: 1,
         userPositions: []
       });
-      // Vider le cache lors du reset
       calculationCache.clear();
       get().updateResults();
+    },
+    
+    loadFromStorage: async () => {
+      try {
+        const { ElectronService } = await import('@/services/electronService');
+        const electronService = ElectronService.getInstance();
+        
+        if (electronService.isAvailable()) {
+          const { DesktopStorage } = await import('@/services/desktopStorage');
+          const storage = DesktopStorage.getInstance();
+          const savedParams = await storage.getUmtsSimulationParams();
+          if (savedParams) {
+            set({
+              numberOfUsers: savedParams.numberOfUsers ?? 50,
+              dataRatePerUser: savedParams.dataRatePerUser ?? 64,
+              activityFactor: savedParams.activityFactor ?? 0.5,
+              serviceType: savedParams.serviceType ?? 'voice',
+              nodeBTransmitPower: savedParams.nodeBTransmitPower ?? 43,
+              showInterference: savedParams.showInterference ?? false,
+              showHandovers: savedParams.showHandovers ?? false,
+              loadFactor: 0,
+              qosLevel: 'excellent',
+              numberOfNodeBsRequired: 1,
+              userPositions: []
+            });
+            // Recalculer les résultats avec les paramètres chargés
+            setTimeout(() => get().updateResults(), 100);
+          }
+        } else {
+          // Fallback vers localStorage en mode web
+          const savedParams = localStorage.getItem('umts_simulation_params');
+          if (savedParams) {
+            const params = JSON.parse(savedParams);
+            set({
+              numberOfUsers: params.numberOfUsers ?? 50,
+              dataRatePerUser: params.dataRatePerUser ?? 64,
+              activityFactor: params.activityFactor ?? 0.5,
+              serviceType: params.serviceType ?? 'voice',
+              nodeBTransmitPower: params.nodeBTransmitPower ?? 43,
+              showInterference: params.showInterference ?? false,
+              showHandovers: params.showHandovers ?? false,
+              loadFactor: 0,
+              qosLevel: 'excellent',
+              numberOfNodeBsRequired: 1,
+              userPositions: []
+            });
+            setTimeout(() => get().updateResults(), 100);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des paramètres UMTS:', error);
+      }
+    },
+    
+    saveToStorage: async () => {
+      try {
+        const { ElectronService } = await import('@/services/electronService');
+        const electronService = ElectronService.getInstance();
+        
+        if (electronService.isAvailable()) {
+          const { DesktopStorage } = await import('@/services/desktopStorage');
+          const storage = DesktopStorage.getInstance();
+          const currentState = get();
+          const paramsToSave = {
+            numberOfUsers: currentState.numberOfUsers,
+            dataRatePerUser: currentState.dataRatePerUser,
+            activityFactor: currentState.activityFactor,
+            serviceType: currentState.serviceType,
+            nodeBTransmitPower: currentState.nodeBTransmitPower,
+            showInterference: currentState.showInterference,
+            showHandovers: currentState.showHandovers
+          };
+          await storage.saveUmtsSimulationParams(paramsToSave);
+        } else {
+          // Fallback vers localStorage en mode web
+          const currentState = get();
+          const paramsToSave = {
+            numberOfUsers: currentState.numberOfUsers,
+            dataRatePerUser: currentState.dataRatePerUser,
+            activityFactor: currentState.activityFactor,
+            serviceType: currentState.serviceType,
+            nodeBTransmitPower: currentState.nodeBTransmitPower,
+            showInterference: currentState.showInterference,
+            showHandovers: currentState.showHandovers
+          };
+          localStorage.setItem('umts_simulation_params', JSON.stringify(paramsToSave));
+        }
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde des paramètres UMTS:', error);
+      }
     }
   }))
-); 
+);
+
+// Auto-sauvegarde lors des changements
+useUMTSSimulationStore.subscribe(
+  (state) => ({ 
+    numberOfUsers: state.numberOfUsers,
+    dataRatePerUser: state.dataRatePerUser,
+    activityFactor: state.activityFactor,
+    serviceType: state.serviceType,
+    nodeBTransmitPower: state.nodeBTransmitPower,
+    showInterference: state.showInterference,
+    showHandovers: state.showHandovers
+  }),
+  async (newState) => {
+    // Éviter la sauvegarde lors du chargement initial
+    if (newState.numberOfUsers > 0) {
+      await useUMTSSimulationStore.getState().saveToStorage();
+    }
+  }
+);
+
+// Chargement automatique au démarrage
+if (typeof window !== 'undefined') {
+  useUMTSSimulationStore.getState().loadFromStorage();
+} 

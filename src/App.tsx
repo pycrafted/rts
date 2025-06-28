@@ -1,5 +1,5 @@
 /**
- * Composant principal de l'application
+ * Composant principal de l'application - TEST AVEC LAYOUT
  * 
  * Ce composant gère :
  * - La structure générale de l'application avec le nouveau Layout
@@ -7,65 +7,103 @@
  * - L'intégration du design system moderne
  * - L'assistant IA flottant global
  * - L'optimisation mobile
+ * - La migration des données vers electron-store
  * 
  * @component
  */
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import FloatingAssistant from './components/ai/FloatingAssistant';
-import MobileOptimizer from './components/common/MobileOptimizer';
+import './App.css';
 
-// Lazy loading des pages pour optimiser les performances
-const Simulation = lazy(() => import('@/pages/Simulation'));
-const Documentation = lazy(() => import('@/pages/Documentation'));
-const GSMPage = lazy(() => import('./pages/GSMPage'));
-const UMTSPage = lazy(() => import('./pages/UMTSPage'));
-const HertzienForm = lazy(() => import('./components/hertzien/HertzienForm'));
-const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
-const OptiqueForm = lazy(() => import('./components/optique/OptiqueForm'));
-const OptiqueSimulation = lazy(() => import('./pages/OptiqueSimulation'));
-const HertzienSimulation = lazy(() => import('./pages/HertzienSimulation'));
-const GSMCoverageDemo = lazy(() => import('./components/gsm/GSMCoverageDemo'));
-const UMTSSimulation = lazy(() => import('./pages/UMTSSimulation'));
-const AssistantIAPage = lazy(() => import('./pages/AssistantIAPage'));
+// Composant de test minimaliste
+const TestPage: React.FC = () => {
+  const handleClick = () => {
+    console.log('🔍 [TEST] Bouton cliqué !');
+    alert('Clic détecté !');
+  };
 
-// Composant de chargement optimisé
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-  </div>
-);
-
-const App: React.FC = () => {
   return (
-    <MobileOptimizer>
-      <Router>
-        <Layout>
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/assistant-ia" element={<AssistantIAPage />} />
-              <Route path="/gsm" element={<GSMPage />} />
-              <Route path="/umts" element={<UMTSPage />} />
-              <Route path="/hertzien" element={<HertzienForm />} />
-              <Route path="/optique" element={<OptiqueForm />} />
-              <Route path="/simulation" element={<Simulation />} />
-              <Route path="/simulation/optique" element={<OptiqueSimulation />} />
-              <Route path="/simulation/hertzien" element={<HertzienSimulation />} />
-              <Route path="/simulation/gsm" element={<GSMCoverageDemo />} />
-              <Route path="/simulation/umts" element={<UMTSSimulation />} />
-              <Route path="/documentation" element={<Documentation />} />
-            </Routes>
-          </Suspense>
-          
-          {/* Assistant IA flottant global */}
-          <FloatingAssistant />
-        </Layout>
-      </Router>
-    </MobileOptimizer>
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Test de Souris - Application Desktop</h1>
+      <p>Cette page est un test minimaliste pour identifier le problème de souris.</p>
+      
+      <div style={{ margin: '20px 0' }}>
+        <button 
+          onClick={handleClick}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          Cliquez ici pour tester
+        </button>
+      </div>
+      
+      <div style={{ margin: '20px 0' }}>
+        <input 
+          type="text" 
+          placeholder="Test input"
+          style={{
+            padding: '10px',
+            fontSize: '16px',
+            border: '1px solid #ccc',
+            borderRadius: '5px',
+            width: '200px'
+          }}
+        />
+      </div>
+      
+      <div style={{ margin: '20px 0' }}>
+        <a 
+          href="#" 
+          onClick={(e) => {
+            e.preventDefault();
+            console.log('🔍 [TEST] Lien cliqué !');
+            alert('Lien cliqué !');
+          }}
+          style={{
+            color: '#007bff',
+            textDecoration: 'underline',
+            cursor: 'pointer'
+          }}
+        >
+          Test de lien
+        </a>
+      </div>
+      
+      <div style={{ margin: '20px 0', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
+        <p>Instructions de test :</p>
+        <ul>
+          <li>Cliquez sur le bouton plusieurs fois</li>
+          <li>Cliquez sur le lien</li>
+          <li>Cliquez dans l'input</li>
+          <li>Attendez 30 secondes puis testez à nouveau</li>
+        </ul>
+      </div>
+    </div>
   );
 };
 
-export default App;
+const App: React.FC = () => {
+  console.log('🔍 [REACT] App component monté - TEST AVEC LAYOUT');
+
+  return (
+    <div className="App">
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="*" element={<TestPage />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </div>
+  );
+}
+
+export default App; 
