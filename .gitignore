@@ -30,3 +30,12 @@ Thumbs.db
 
 # Tailwind JIT cache
 .tailwind*
+
+# Test files
+src/test/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+vitest.config.ts
+vitest.integration.config.ts
